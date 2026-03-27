@@ -8,6 +8,19 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v } from "convex/values";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+function corsJson(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
 function getS3Client() {
   return new S3Client({
     region: process.env.S3_REGION!,
@@ -25,51 +38,54 @@ function getBucket() {
 }
 
 export const getUploadUrl = httpAction(async (_ctx, request) => {
-  const { filename, mimeType, canvasId } = await request.json() as {
-    filename: string;
-    mimeType: string;
-    canvasId: string;
-  };
-  const storageKey = `${canvasId}/${Date.now()}-${filename}`;
-  const client = getS3Client();
-  const url = await getSignedUrl(
-    client,
-    new PutObjectCommand({
-      Bucket: getBucket(),
-      Key: storageKey,
-      ContentType: mimeType,
-    }),
-    { expiresIn: 300 }
-  );
-  return new Response(JSON.stringify({ uploadUrl: url, storageKey }), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  // Handle CORS preflight
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
+  }
+  try {
+    const { filename, mimeType, canvasId } = (await request.json()) as {
+      filename: string;
+      mimeType: string;
+      canvasId: string;
+    };
+    const storageKey = `${canvasId}/${Date.now()}-${filename}`;
+    const client = getS3Client();
+    const url = await getSignedUrl(
+      client,
+      new PutObjectCommand({
+        Bucket: getBucket(),
+        Key: storageKey,
+        ContentType: mimeType,
+      }),
+      { expiresIn: 300 }
+    );
+    return corsJson({ uploadUrl: url, storageKey });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return corsJson({ error: message }, 500);
+  }
 });
 
 export const getImageUrl = httpAction(async (_ctx, request) => {
-  const url = new URL(request.url);
-  const key = url.searchParams.get("key");
-  if (!key) {
-    return new Response(JSON.stringify({ error: "Missing key" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: CORS_HEADERS });
   }
-  const client = getS3Client();
-  const signedUrl = await getSignedUrl(
-    client,
-    new GetObjectCommand({ Bucket: getBucket(), Key: key }),
-    { expiresIn: 3600 }
-  );
-  return new Response(JSON.stringify({ url: signedUrl }), {
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+  try {
+    const url = new URL(request.url);
+    const key = url.searchParams.get("key");
+    if (!key) return corsJson({ error: "Missing key" }, 400);
+
+    const client = getS3Client();
+    const signedUrl = await getSignedUrl(
+      client,
+      new GetObjectCommand({ Bucket: getBucket(), Key: key }),
+      { expiresIn: 3600 }
+    );
+    return corsJson({ url: signedUrl });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Internal error";
+    return corsJson({ error: message }, 500);
+  }
 });
 
 export const deleteObjects = internalAction({
@@ -78,9 +94,7 @@ export const deleteObjects = internalAction({
     const client = getS3Client();
     await Promise.all(
       keys.map((Key) =>
-        client.send(
-          new DeleteObjectCommand({ Bucket: getBucket(), Key })
-        )
+        client.send(new DeleteObjectCommand({ Bucket: getBucket(), Key }))
       )
     );
   },
