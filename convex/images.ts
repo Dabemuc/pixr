@@ -61,6 +61,20 @@ export const resize = mutation({
   },
 });
 
+export const setDescription = mutation({
+  args: { id: v.id("images"), description: v.string() },
+  handler: async (ctx, { id, description }) => {
+    await ctx.db.patch(id, { description, updatedAt: Date.now() });
+  },
+});
+
+export const setDescriptionAlign = mutation({
+  args: { id: v.id("images"), align: v.union(v.literal("left"), v.literal("center")) },
+  handler: async (ctx, { id, align }) => {
+    await ctx.db.patch(id, { descriptionAlign: align, updatedAt: Date.now() });
+  },
+});
+
 export const reorder = mutation({
   args: { id: v.id("images"), zIndex: v.number() },
   handler: async (ctx, { id, zIndex }) => {

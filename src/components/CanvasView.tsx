@@ -28,6 +28,8 @@ export default function CanvasView({
 
   const canvas = useQuery(api.canvases.get, { id: canvasId });
   const renameMutation = useMutation(api.canvases.rename);
+  const descriptionMutation = useMutation(api.images.setDescription);
+  const descriptionAlignMutation = useMutation(api.images.setDescriptionAlign);
 
   const {
     images,
@@ -190,6 +192,12 @@ export default function CanvasView({
                 }
                 onSendToBack={() =>
                   void reorderMutation({ id: img._id, zIndex: 0 })
+                }
+                onDescriptionChange={(description) =>
+                  void descriptionMutation({ id: img._id, description })
+                }
+                onDescriptionAlignChange={(align) =>
+                  void descriptionAlignMutation({ id: img._id, align })
                 }
               />
             ))}

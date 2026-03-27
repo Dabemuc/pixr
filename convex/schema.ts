@@ -33,6 +33,8 @@ export default defineSchema({
     w: v.number(),
     h: v.number(),
     zIndex: v.number(),
+    description: v.optional(v.string()),
+    descriptionAlign: v.optional(v.union(v.literal("left"), v.literal("center"))),
     updatedAt: v.number(),
   }).index("by_canvas", ["canvasId"]),
 });
