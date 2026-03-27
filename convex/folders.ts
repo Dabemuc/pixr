@@ -15,7 +15,14 @@ export const list = query({
 export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
-    return ctx.db.insert("folders", { name, updatedAt: Date.now() });
+    return ctx.db.insert("folders", { name, updatedAt: Date.now(), position: Date.now() });
+  },
+});
+
+export const reorder = mutation({
+  args: { id: v.id("folders"), position: v.number() },
+  handler: async (ctx, { id, position }) => {
+    await ctx.db.patch(id, { position, updatedAt: Date.now() });
   },
 });
 

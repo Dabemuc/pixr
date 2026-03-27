@@ -27,7 +27,19 @@ export const create = mutation({
       name,
       description,
       updatedAt: Date.now(),
+      position: Date.now(),
     });
+  },
+});
+
+export const reorder = mutation({
+  args: {
+    id: v.id("canvases"),
+    position: v.number(),
+    folderId: v.optional(v.id("folders")),
+  },
+  handler: async (ctx, { id, position, folderId }) => {
+    await ctx.db.patch(id, { position, folderId, updatedAt: Date.now() });
   },
 });
 
