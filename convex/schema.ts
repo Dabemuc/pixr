@@ -6,7 +6,10 @@ export default defineSchema({
     name: v.string(),
     updatedAt: v.number(),
     position: v.optional(v.number()),
-  }).index("by_updated", ["updatedAt"]),
+    parentFolderId: v.optional(v.id("folders")),
+  })
+    .index("by_updated", ["updatedAt"])
+    .index("by_parent", ["parentFolderId"]),
 
   canvases: defineTable({
     name: v.string(),
