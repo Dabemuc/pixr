@@ -1,7 +1,11 @@
-// Convex HTTP actions are served at .convex.site (not .convex.cloud)
-const convexSiteUrl = (import.meta.env.VITE_CONVEX_URL as string | undefined)
-  ?.replace(".convex.cloud", ".convex.site")
-  ?.replace("http://", "https://");
+// Local dev: Convex sets VITE_CONVEX_SITE_URL directly (same host, HTTP).
+// Cloud prod: HTTP actions are at .convex.site instead of .convex.cloud.
+const convexSiteUrl =
+  (import.meta.env.VITE_CONVEX_SITE_URL as string | undefined) ??
+  (import.meta.env.VITE_CONVEX_URL as string | undefined)?.replace(
+    ".convex.cloud",
+    ".convex.site"
+  );
 
 export async function requestUploadUrl(params: {
   filename: string;
