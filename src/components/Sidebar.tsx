@@ -598,7 +598,7 @@ export default function Sidebar({
         <Separator />
 
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto py-1">
+        <nav className="flex-1 overflow-y-auto py-1 flex flex-col">
           {canvases.length === 0 && folders.length === 0 && (
             <p className="px-4 py-3 text-xs text-muted-foreground">
               No canvases yet. Click + to create one.
@@ -632,29 +632,14 @@ export default function Sidebar({
             <FolderSection key={folder._id} folder={folder} />
           ))}
 
-          {/* Bottom drop zone — always present so canvases can be dragged
-              out of a folder even when the top unfoldered zone is empty */}
+          {/* Bottom drop zone — invisible, fills remaining space */}
           {folders.length > 0 && (
             <div
+              className="flex-1 min-h-[60px]"
               onDragOver={(e) => handleDragOver(e, "root-bottom")}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, undefined)}
-              className={cn(
-                "mx-2 mt-1 mb-1 rounded-md min-h-[32px] flex items-center justify-center transition-colors border border-dashed",
-                dragOverTarget === "root-bottom"
-                  ? "border-primary/50 bg-primary/10"
-                  : "border-transparent"
-              )}
-            >
-              <p className={cn(
-                "text-xs transition-opacity",
-                dragOverTarget === "root-bottom"
-                  ? "text-primary/70 opacity-100"
-                  : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"
-              )}>
-                Drop here to remove from folder
-              </p>
-            </div>
+            />
           )}
         </nav>
 
