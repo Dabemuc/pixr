@@ -115,6 +115,40 @@ export default function Sidebar({
   const [deleteFolderId, setDeleteFolderId] = useState<Id<"folders"> | null>(null);
   const [deleteFolderName, setDeleteFolderName] = useState("");
 
+  // Drag-and-drop state
+  // dragOverTarget: folder ID string → hovering that folder; "root" → hovering unfoldered zone
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+
+  function handleDragStart(e: React.DragEvent, canvasId: string) {
+    e.dataTransfer.setData("canvasId", canvasId);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function handleDragOver(e: React.DragEvent, target: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverTarget !== target) setDragOverTarget(target);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // Only clear when leaving the element entirely (not moving to a child)
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDragOverTarget(null);
+    }
+  }
+
+  function handleDrop(e: React.DragEvent, folderId: string | undefined) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTarget(null);
+    const canvasId = e.dataTransfer.getData("canvasId") as Id<"canvases">;
+    if (!canvasId) return;
+    void moveToFolderMutation({ id: canvasId, folderId: folderId as Id<"folders"> | undefined }).catch((err: unknown) => {
+      toast.error(`Failed to move: ${err instanceof Error ? err.message : "Unknown"}`);
+    });
+  }
+
   // Collapse state persisted to localStorage
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => {
     try {
@@ -235,11 +269,14 @@ export default function Sidebar({
 
     return (
       <div
+        draggable={!isRenaming}
         className={cn(
           "group flex items-center gap-2 px-3 py-2 rounded-md mx-2 my-0.5 cursor-pointer transition-colors",
           isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted"
         )}
         onClick={() => { if (!isRenaming) onSelectCanvas(canvas._id); }}
+        onDragStart={(e) => handleDragStart(e, canvas._id)}
+        onDragEnd={() => setDragOverTarget(null)}
       >
         <div className="flex-1 min-w-0">
           {isRenaming ? (
@@ -359,9 +396,24 @@ export default function Sidebar({
     const isRenaming = renamingFolderId === folder._id;
     const children = canvasesByFolder.get(folder._id as string) ?? [];
 
+    const isDropTarget = dragOverTarget === (folder._id as string);
+
     return (
-      <div>
-        <div className="group flex items-center gap-1 px-2 py-1 mx-2 mt-1 rounded-md hover:bg-muted">
+      <div
+        onDragOver={(e) => handleDragOver(e, folder._id as string)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => {
+          // Expand collapsed folder on drop so the user sees the result
+          if (collapsedFolders.has(folder._id as string)) {
+            toggleFolderCollapsed(folder._id as string);
+          }
+          handleDrop(e, folder._id);
+        }}
+      >
+        <div className={cn(
+          "group flex items-center gap-1 px-2 py-1 mx-2 mt-1 rounded-md hover:bg-muted transition-colors",
+          isDropTarget && "bg-primary/10 ring-1 ring-primary/40"
+        )}>
           {isRenaming ? (
             <Input
               className="h-6 text-xs py-0 flex-1"
@@ -553,10 +605,27 @@ export default function Sidebar({
             </p>
           )}
 
-          {/* Unfoldered canvases */}
-          {unfoldered.map((canvas) => (
-            <CanvasRow key={canvas._id} canvas={canvas} />
-          ))}
+          {/* Unfoldered drop zone */}
+          <div
+            onDragOver={(e) => handleDragOver(e, "root")}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, undefined)}
+            className={cn(
+              "rounded-md mx-2 transition-colors",
+              dragOverTarget === "root" && unfoldered.length === 0
+                ? "min-h-[36px] bg-primary/10 ring-1 ring-primary/40 ring-inset flex items-center justify-center"
+                : dragOverTarget === "root"
+                ? "ring-1 ring-primary/40 ring-inset"
+                : ""
+            )}
+          >
+            {dragOverTarget === "root" && unfoldered.length === 0 && (
+              <p className="text-xs text-primary/70">Drop here to remove from folder</p>
+            )}
+            {unfoldered.map((canvas) => (
+              <CanvasRow key={canvas._id} canvas={canvas} />
+            ))}
+          </div>
 
           {/* Folders */}
           {folders.map((folder) => (
