@@ -156,7 +156,8 @@ export default function CanvasImage({
       const dx = (e.clientX - resizeStart.current.px) / scale;
       const dy = (e.clientY - resizeStart.current.py) / scale;
       const handle = isResizing.current;
-      let { ix, iy, iw, ih } = resizeStart.current;
+      const { ix, iy, iw, ih } = resizeStart.current;
+      const aspect = iw / ih;
 
       let newX = ix;
       let newY = iy;
@@ -174,6 +175,36 @@ export default function CanvasImage({
         const delta = Math.min(dy, ih - MIN_SIZE);
         newY = iy + delta;
         newH = ih - delta;
+      }
+
+      // Shift: constrain to original aspect ratio
+      if (e.shiftKey) {
+        if (handle === "e" || handle === "w") {
+          // Width-only handle: derive height from new width
+          const constrainedH = Math.max(MIN_SIZE, newW / aspect);
+          if (handle === "w") newX = ix + iw - newW;
+          newH = constrainedH;
+        } else if (handle === "n" || handle === "s") {
+          // Height-only handle: derive width from new height
+          const constrainedW = Math.max(MIN_SIZE, newH * aspect);
+          if (handle === "n") newY = iy + ih - newH;
+          newW = constrainedW;
+        } else {
+          // Corner handle: use whichever axis moved more
+          const wByDx = Math.max(MIN_SIZE, handle.includes("e") ? iw + dx : iw - dx);
+          const hByDy = Math.max(MIN_SIZE, handle.includes("s") ? ih + dy : ih - dy);
+          // Pick the dominant axis
+          if (Math.abs(dx) >= Math.abs(dy)) {
+            newW = wByDx;
+            newH = newW / aspect;
+          } else {
+            newH = hByDy;
+            newW = newH * aspect;
+          }
+          // Recompute origin for NW/NE/SW corners
+          if (handle.includes("w")) newX = ix + iw - newW;
+          if (handle.includes("n")) newY = iy + ih - newH;
+        }
       }
 
       onResizeOptimistic(image._id, newX, newY, newW, newH);
