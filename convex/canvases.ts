@@ -38,6 +38,16 @@ export const rename = mutation({
   },
 });
 
+export const moveToFolder = mutation({
+  args: {
+    id: v.id("canvases"),
+    folderId: v.optional(v.id("folders")),
+  },
+  handler: async (ctx, { id, folderId }) => {
+    await ctx.db.patch(id, { folderId, updatedAt: Date.now() });
+  },
+});
+
 export const deleteCanvas = mutation({
   args: { id: v.id("canvases") },
   handler: async (ctx, { id }) => {

@@ -2,11 +2,19 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  folders: defineTable({
+    name: v.string(),
+    updatedAt: v.number(),
+  }).index("by_updated", ["updatedAt"]),
+
   canvases: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
+    folderId: v.optional(v.id("folders")),
     updatedAt: v.number(),
-  }).index("by_updated", ["updatedAt"]),
+  })
+    .index("by_updated", ["updatedAt"])
+    .index("by_folder", ["folderId"]),
 
   images: defineTable({
     canvasId: v.id("canvases"),
