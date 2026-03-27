@@ -1,13 +1,13 @@
 import { useRef, useState, useCallback, useEffect } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useCanvas } from "@/hooks/useCanvas";
 import { useImages } from "@/hooks/useImages";
-import { useQuery } from "convex/react";
 import Toolbar from "@/components/Toolbar";
 import CanvasImage from "@/components/CanvasImage";
 import UploadZone from "@/components/UploadZone";
+import { requestUploadUrl, uploadToS3, getImageDimensions } from "@/lib/s3";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,7 +48,6 @@ export default function CanvasView({
     resetViewport,
     zoomIn,
     zoomOut,
-    screenToCanvas,
   } = useCanvas(containerRef);
 
   // Deselect when clicking background
@@ -111,9 +110,6 @@ export default function CanvasView({
   function getMaxZIndex() {
     return images.reduce((m, img) => Math.max(m, img.zIndex), 0);
   }
-
-  const _screenToCanvas = screenToCanvas;
-  void _screenToCanvas;
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -219,9 +215,6 @@ export default function CanvasView({
   );
 
   async function processFilesDirect(files: FileList) {
-    const { requestUploadUrl, uploadToS3, getImageDimensions } = await import(
-      "@/lib/s3"
-    );
     const ACCEPTED = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     const MAX_SIZE = 20 * 1024 * 1024;
     const MAX_W = 600;

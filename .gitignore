@@ -12,8 +12,10 @@ dist
 dist-ssr
 *.local
 
-# Convex generated files (created by `npx convex dev`)
-convex/_generated/
+# Convex auto-generated files are committed as stubs for initial build.
+# They are overwritten by `npx convex dev`. You may choose to gitignore
+# after first setup:
+# convex/_generated/
 
 # Environment files with secrets
 .env.local
