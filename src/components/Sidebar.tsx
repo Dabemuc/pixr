@@ -116,7 +116,7 @@ export default function Sidebar({
   const [deleteFolderName, setDeleteFolderName] = useState("");
 
   // Drag-and-drop state
-  // dragOverTarget: folder ID string → hovering that folder; "root" → hovering unfoldered zone
+  // dragOverTarget: folder ID → hovering that folder; "root" / "root-bottom" → unfoldered zones
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
 
   function handleDragStart(e: React.DragEvent, canvasId: string) {
@@ -631,6 +631,31 @@ export default function Sidebar({
           {folders.map((folder) => (
             <FolderSection key={folder._id} folder={folder} />
           ))}
+
+          {/* Bottom drop zone — always present so canvases can be dragged
+              out of a folder even when the top unfoldered zone is empty */}
+          {folders.length > 0 && (
+            <div
+              onDragOver={(e) => handleDragOver(e, "root-bottom")}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, undefined)}
+              className={cn(
+                "mx-2 mt-1 mb-1 rounded-md min-h-[32px] flex items-center justify-center transition-colors border border-dashed",
+                dragOverTarget === "root-bottom"
+                  ? "border-primary/50 bg-primary/10"
+                  : "border-transparent"
+              )}
+            >
+              <p className={cn(
+                "text-xs transition-opacity",
+                dragOverTarget === "root-bottom"
+                  ? "text-primary/70 opacity-100"
+                  : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"
+              )}>
+                Drop here to remove from folder
+              </p>
+            </div>
+          )}
         </nav>
 
         <Separator />
