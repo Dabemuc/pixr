@@ -21,7 +21,10 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { ImageOff } from "lucide-react";
 
 interface ImageData {
@@ -57,7 +60,7 @@ interface CanvasImageProps {
     w: number,
     h: number
   ) => void;
-  onDelete: (args: { id: Id<"images"> }) => Promise<void>;
+  onDelete: (args: { id: Id<"images"> }) => Promise<void | null>;
   onBringToFront: () => void;
   onSendToBack: () => void;
 }
@@ -350,6 +353,10 @@ export default function CanvasImage({
       {/* Lightbox */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 flex items-center justify-center bg-black/90">
+          <VisuallyHidden>
+            <DialogTitle>{image.filename}</DialogTitle>
+            <DialogDescription>Full-size preview of {image.filename}</DialogDescription>
+          </VisuallyHidden>
           {signedUrl && (
             <img
               src={signedUrl}
