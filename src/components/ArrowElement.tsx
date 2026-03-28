@@ -17,7 +17,7 @@ interface ArrowElementProps {
   scale: number;
   onSelect: (addToSelection?: boolean) => void;
   onMoveOptimistic: (id: string, x: number, y: number, x2: number, y2: number) => void;
-  onCommitMove: (id: Id<"shapes">, x: number, y: number, x2: number, y2: number) => Promise<void>;
+  onCommitMove: (id: Id<"shapes">, x: number, y: number, x2: number, y2: number, prevX: number, prevY: number, prevX2: number, prevY2: number) => Promise<void>;
 }
 
 export default function ArrowElement({
@@ -82,7 +82,10 @@ export default function ArrowElement({
   function handleSvgPointerUp() {
     if (!isDragging.current) return;
     isDragging.current = null;
-    void onCommitMove(shape._id, shape.x, shape.y, shape.x2, shape.y2);
+    void onCommitMove(
+      shape._id, shape.x, shape.y, shape.x2, shape.y2,
+      dragStart.current.sx, dragStart.current.sy, dragStart.current.ex, dragStart.current.ey
+    );
   }
 
   return (

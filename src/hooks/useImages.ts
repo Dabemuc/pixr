@@ -30,24 +30,24 @@ export function useImages(canvasId: Id<"canvases">) {
 
   const commitMove = useCallback(
     async (id: Id<"images">, x: number, y: number) => {
+      await moveMutation({ id, x, y });
       setLocalOverrides((m) => {
         const n = new Map(m);
         n.delete(id);
         return n;
       });
-      await moveMutation({ id, x, y });
     },
     [moveMutation]
   );
 
   const commitResize = useCallback(
     async (id: Id<"images">, x: number, y: number, w: number, h: number) => {
+      await resizeMutation({ id, x, y, w, h });
       setLocalOverrides((m) => {
         const n = new Map(m);
         n.delete(id);
         return n;
       });
-      await resizeMutation({ id, x, y, w, h });
     },
     [resizeMutation]
   );

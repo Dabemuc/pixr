@@ -34,9 +34,9 @@ interface TextElementProps {
   scale: number;
   onSelect: (addToSelection?: boolean) => void;
   onMoveOptimistic: (id: string, x: number, y: number) => void;
-  onCommitMove: (id: Id<"shapes">, x: number, y: number) => Promise<void>;
+  onCommitMove: (id: Id<"shapes">, x: number, y: number, prevX: number, prevY: number) => Promise<void>;
   onResizeOptimistic: (id: string, x: number, y: number, w: number, h: number) => void;
-  onCommitResize: (id: Id<"shapes">, x: number, y: number, w: number, h: number) => Promise<void>;
+  onCommitResize: (id: Id<"shapes">, x: number, y: number, w: number, h: number, prevX: number, prevY: number, prevW: number, prevH: number) => Promise<void>;
   onContentChange: (id: Id<"shapes">, content: string) => void;
   onDelete: (id: Id<"shapes">) => void;
 }
@@ -117,11 +117,14 @@ export default function TextElement({
   function handlePointerUp() {
     if (isDragging.current) {
       isDragging.current = false;
-      void onCommitMove(shape._id, shape.x, shape.y);
+      void onCommitMove(shape._id, shape.x, shape.y, dragStart.current.ix, dragStart.current.iy);
     }
     if (isResizing.current) {
       isResizing.current = null;
-      void onCommitResize(shape._id, shape.x, shape.y, shape.w, shape.h);
+      void onCommitResize(
+        shape._id, shape.x, shape.y, shape.w, shape.h,
+        resizeStart.current.ix, resizeStart.current.iy, resizeStart.current.iw, resizeStart.current.ih
+      );
     }
   }
 
