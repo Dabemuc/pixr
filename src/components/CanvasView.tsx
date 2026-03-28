@@ -75,7 +75,6 @@ export default function CanvasView({
     resetViewport,
     zoomIn,
     zoomOut,
-    screenToCanvas,
   } = useCanvas(containerRef);
 
   function getMaxZIndex() {
@@ -86,6 +85,16 @@ export default function CanvasView({
     );
   }
 
+  // Canvas draw coordinates account for the toolbar height (pt-[44px] on containerRef)
+  const TOOLBAR_HEIGHT = 44;
+  function clientToCanvas(clientX: number, clientY: number) {
+    const rect = containerRef.current!.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - viewport.x) / viewport.scale,
+      y: (clientY - rect.top - TOOLBAR_HEIGHT - viewport.y) / viewport.scale,
+    };
+  }
+
   // Pointer handlers: route to pan OR draw based on active tool
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (activeTool === "select") {
@@ -93,8 +102,7 @@ export default function CanvasView({
       return;
     }
     if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
-    const rect = containerRef.current!.getBoundingClientRect();
-    const pos = screenToCanvas(e.clientX, e.clientY, rect);
+    const pos = clientToCanvas(e.clientX, e.clientY);
     setDrawState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
     e.currentTarget.setPointerCapture(e.pointerId);
   }
@@ -105,8 +113,7 @@ export default function CanvasView({
       return;
     }
     if (!drawState) return;
-    const rect = containerRef.current!.getBoundingClientRect();
-    const pos = screenToCanvas(e.clientX, e.clientY, rect);
+    const pos = clientToCanvas(e.clientX, e.clientY);
     setDrawState((d) => (d ? { ...d, currentX: pos.x, currentY: pos.y } : null));
   }
 
@@ -147,8 +154,6 @@ export default function CanvasView({
       setSelectedShapeId(id);
       setSelectedId(null);
     }
-
-    setActiveTool("select");
   }
 
   // Deselect when clicking background
