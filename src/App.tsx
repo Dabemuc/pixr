@@ -98,7 +98,15 @@ function AppContent() {
         open={sidebarOpen}
       />
 
-      <main className="flex-1 overflow-hidden relative">
+      {/* Mobile backdrop — tap to close sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/40 sm:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <main className="flex-1 w-full overflow-hidden relative">
         {canvases === undefined ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-sm">Loading…</div>
