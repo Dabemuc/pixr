@@ -37,4 +37,20 @@ export default defineSchema({
     descriptionAlign: v.optional(v.union(v.literal("left"), v.literal("center"))),
     updatedAt: v.number(),
   }).index("by_canvas", ["canvasId"]),
+
+  shapes: defineTable({
+    canvasId: v.id("canvases"),
+    type: v.union(v.literal("text"), v.literal("arrow")),
+    x: v.number(),
+    y: v.number(),
+    // text box dimensions
+    w: v.optional(v.number()),
+    h: v.optional(v.number()),
+    // arrow endpoint
+    x2: v.optional(v.number()),
+    y2: v.optional(v.number()),
+    content: v.optional(v.string()),
+    zIndex: v.number(),
+    updatedAt: v.number(),
+  }).index("by_canvas", ["canvasId"]),
 });
