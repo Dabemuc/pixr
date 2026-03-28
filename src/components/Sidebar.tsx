@@ -823,7 +823,7 @@ export default function Sidebar({
       <aside
         className={cn(
           "flex flex-col bg-background/90 backdrop-blur border-r border-border transition-all duration-200 overflow-hidden",
-          "fixed bottom-0 left-0 z-40",
+          "fixed bottom-0 left-0 z-[60]",
           open ? "w-64" : "w-0"
         )}
         style={{ top: "calc(44px + env(safe-area-inset-top, 0px))" }}
