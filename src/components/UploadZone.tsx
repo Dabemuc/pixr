@@ -166,6 +166,7 @@ export default function UploadZone({
         onChange={(e) => {
           if (e.target.files) void processFiles(e.target.files);
           e.target.value = "";
+          e.target.blur();
         }}
       />
     </div>

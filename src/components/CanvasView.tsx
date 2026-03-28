@@ -665,9 +665,12 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   useEffect(() => {
     if (readOnly) return;
     async function handlePaste(e: ClipboardEvent) {
+      // Allow paste through file inputs (type="file") — they don't capture clipboard text.
+      // On Windows Chromium/Edge, focus can linger on a hidden file input after the picker closes.
+      const target = e.target as HTMLElement;
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        (target instanceof HTMLInputElement && target.type !== "file") ||
+        target instanceof HTMLTextAreaElement
       ) return;
       const imageItem = Array.from(e.clipboardData?.items ?? [])
         .find((item) => item.type.startsWith("image/"));
@@ -767,6 +770,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
             if (!e.target.files) return;
             void processFilesDirect(e.target.files);
             e.target.value = "";
+            e.target.blur();
           }}
         />
 
