@@ -174,7 +174,7 @@ export default function Toolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onFitToScreen}>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onFitToScreen}>
                 <Maximize2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
