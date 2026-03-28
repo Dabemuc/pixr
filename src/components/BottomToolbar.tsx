@@ -26,25 +26,6 @@ export default function BottomToolbar({ activeTool, onSelectTool, onUndo, onRedo
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <button
-        onClick={onUndo}
-        disabled={!canUndo}
-        title="Undo (Ctrl+Z)"
-        className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-      >
-        <Undo2 className="w-4 h-4" />
-      </button>
-      <button
-        onClick={onRedo}
-        disabled={!canRedo}
-        title="Redo (Ctrl+Y)"
-        className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-      >
-        <Redo2 className="w-4 h-4" />
-      </button>
-
-      <div className="w-px h-5 bg-border mx-0.5" />
-
       {TOOLS.map(({ id, icon: Icon, label }) => (
         <button
           key={id}
@@ -62,6 +43,25 @@ export default function BottomToolbar({ activeTool, onSelectTool, onUndo, onRedo
           <Icon className="w-4 h-4" />
         </button>
       ))}
+
+      <div className="w-px h-5 bg-border mx-0.5" />
+
+      <button
+        onClick={onUndo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+      >
+        <Undo2 className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onRedo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Y)"
+        className="flex items-center justify-center w-9 h-9 rounded-lg transition-colors text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+      >
+        <Redo2 className="w-4 h-4" />
+      </button>
     </div>
   );
 }
