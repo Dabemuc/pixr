@@ -18,8 +18,20 @@ export const list = query({
 export const get = query({
   args: { id: v.id("canvases") },
   handler: async (ctx, { id }) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const canvas = await ctx.db.get(id);
+    if (!canvas) return null;
+    // Unauthenticated users may only access public canvases
+    if (!identity && !canvas.isPublic) return null;
+    return canvas;
+  },
+});
+
+export const setPublic = mutation({
+  args: { id: v.id("canvases"), isPublic: v.boolean() },
+  handler: async (ctx, { id, isPublic }) => {
     await requireAuth(ctx);
-    return ctx.db.get(id);
+    await ctx.db.patch(id, { isPublic, updatedAt: Date.now() });
   },
 });
 

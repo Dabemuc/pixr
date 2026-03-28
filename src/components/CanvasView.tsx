@@ -23,6 +23,7 @@ interface CanvasViewProps {
   canvasId: Id<"canvases">;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
+  readOnly?: boolean;
 }
 
 // ── Types for group operations ────────────────────────────────────────────────
@@ -93,7 +94,7 @@ function computeNewBounds(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: CanvasViewProps) {
+export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, readOnly = false }: CanvasViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -111,6 +112,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
   const renameMutation = useMutation(api.canvases.rename);
+  const setPublicMutation = useMutation(api.canvases.setPublic);
   const descriptionMutation = useMutation(api.images.setDescription);
   const descriptionAlignMutation = useMutation(api.images.setDescriptionAlign);
 
@@ -307,8 +309,12 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
 
   // ── Canvas pointer handlers ────────────────────────────────────────────────
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (e.button === 1) {
-      midMouseDown(e);
+    if (e.button === 1) { midMouseDown(e); return; }
+    if (readOnly) {
+      // In read-only mode only allow panning via left-drag on background
+      if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
+      startPan(e.clientX, e.clientY);
+      e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
     if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
@@ -393,6 +399,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
 
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
   useEffect(() => {
+    if (readOnly) return;
     function handleKeyDown(e: KeyboardEvent) {
       const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
       const notInInput =
@@ -464,14 +471,18 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
     <div className="relative w-full h-full overflow-hidden">
       <Toolbar
         canvasName={canvas?.name ?? "Loading…"}
-        onRenameCanvas={handleRenameCanvas}
+        canvasId={canvasId}
+        onRenameCanvas={readOnly ? undefined : handleRenameCanvas}
         scale={viewport.scale}
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onZoomReset={resetViewport}
-        onUpload={() => fileInputRef.current?.click()}
+        onUpload={readOnly ? undefined : () => fileInputRef.current?.click()}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={onToggleSidebar}
+        isPublic={canvas?.isPublic ?? false}
+        onTogglePublic={readOnly ? undefined : (val) => void setPublicMutation({ id: canvasId, isPublic: val })}
+        readOnly={readOnly}
       />
 
       <UploadZone canvasId={canvasId} viewport={viewport} containerRef={containerRef} onUpload={handleUpload}>
@@ -508,6 +519,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
               height: 0,
             }}
           >
+            {/* Elements — pointer-events disabled in read-only mode */}
+            <div style={{ pointerEvents: readOnly ? "none" : "auto" }}>
             {images.map((img) => (
               <CanvasImage
                 key={img._id}
@@ -565,8 +578,10 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
               return null;
             })}
 
+            </div>{/* end elements wrapper */}
+
             {/* Group selection overlay (multi-select) */}
-            {isMultiSelect && selectionBounds && (
+            {!readOnly && isMultiSelect && selectionBounds && (
               <GroupSelectionOverlay
                 bounds={selectionBounds}
                 scale={viewport.scale}
@@ -655,7 +670,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
         </div>
       </UploadZone>
 
-      <BottomToolbar activeTool={activeTool} onSelectTool={setActiveTool} />
+      {!readOnly && <BottomToolbar activeTool={activeTool} onSelectTool={setActiveTool} />}
     </div>
   );
 

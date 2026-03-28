@@ -6,7 +6,11 @@ import { requireAuth } from "./_auth";
 export const listByCanvas = query({
   args: { canvasId: v.id("canvases") },
   handler: async (ctx, { canvasId }) => {
-    await requireAuth(ctx);
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      const canvas = await ctx.db.get(canvasId);
+      if (!canvas?.isPublic) return [];
+    }
     return ctx.db
       .query("images")
       .withIndex("by_canvas", (q) => q.eq("canvasId", canvasId))

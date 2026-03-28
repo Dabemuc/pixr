@@ -17,6 +17,7 @@ export default defineSchema({
     folderId: v.optional(v.id("folders")),
     updatedAt: v.number(),
     position: v.optional(v.number()),
+    isPublic: v.optional(v.boolean()),
   })
     .index("by_updated", ["updatedAt"])
     .index("by_folder", ["folderId"]),

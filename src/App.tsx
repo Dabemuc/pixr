@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 import { useQuery, useMutation } from "convex/react";
 import { useUser, SignIn } from "@clerk/clerk-react";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
+import PublicCanvasPage from "@/pages/PublicCanvasPage";
 import Sidebar from "@/components/Sidebar";
 import CanvasView from "@/components/CanvasView";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,15 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function App() {
+  return (
+    <Routes>
+      <Route path="/p/:canvasId" element={<PublicCanvasPage />} />
+      <Route path="*" element={<AuthGate />} />
+    </Routes>
+  );
+}
+
+function AuthGate() {
   const { isLoaded, isSignedIn } = useUser();
 
   if (!isLoaded) {

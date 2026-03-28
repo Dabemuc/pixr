@@ -5,7 +5,8 @@
 - [x] Image descriptions
 - [x] Textboxes and forms like arrows selectable from a toolbar
 - [x] Multi select box
-- [ ] Clerk Goolge Auth
+- [x] Clerk Goolge Auth
+- [ ] Sharing canvases to not logged in users
 
 ## Styling
 
