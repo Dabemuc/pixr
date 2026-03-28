@@ -12,6 +12,7 @@ import type * as canvases from "../canvases.js";
 import type * as folders from "../folders.js";
 import type * as http from "../http.js";
 import type * as images from "../images.js";
+import type * as shapes from "../shapes.js";
 import type * as storage from "../storage.js";
 
 import type {
@@ -25,6 +26,7 @@ declare const fullApi: ApiFromModules<{
   folders: typeof folders;
   http: typeof http;
   images: typeof images;
+  shapes: typeof shapes;
   storage: typeof storage;
 }>;
 

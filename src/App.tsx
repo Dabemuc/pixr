@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
+import { useUser, SignIn } from "@clerk/clerk-react";
 import { api } from "../convex/_generated/api";
 import type { Id } from "../convex/_generated/dataModel";
 import Sidebar from "@/components/Sidebar";
@@ -18,6 +19,28 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export default function App() {
+  const { isLoaded, isSignedIn } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background text-muted-foreground text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <SignIn routing="hash" />
+      </div>
+    );
+  }
+
+  return <AppContent />;
+}
+
+function AppContent() {
   const canvases = useQuery(api.canvases.list);
   const createMutation = useMutation(api.canvases.create);
 

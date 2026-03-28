@@ -1,10 +1,12 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { requireAuth } from "./_auth";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    await requireAuth(ctx);
     return ctx.db
       .query("canvases")
       .withIndex("by_updated")
@@ -16,6 +18,7 @@ export const list = query({
 export const get = query({
   args: { id: v.id("canvases") },
   handler: async (ctx, { id }) => {
+    await requireAuth(ctx);
     return ctx.db.get(id);
   },
 });
@@ -23,6 +26,7 @@ export const get = query({
 export const create = mutation({
   args: { name: v.string(), description: v.optional(v.string()) },
   handler: async (ctx, { name, description }) => {
+    await requireAuth(ctx);
     return ctx.db.insert("canvases", {
       name,
       description,
@@ -39,6 +43,7 @@ export const reorder = mutation({
     folderId: v.optional(v.id("folders")),
   },
   handler: async (ctx, { id, position, folderId }) => {
+    await requireAuth(ctx);
     await ctx.db.patch(id, { position, folderId, updatedAt: Date.now() });
   },
 });
@@ -46,6 +51,7 @@ export const reorder = mutation({
 export const rename = mutation({
   args: { id: v.id("canvases"), name: v.string() },
   handler: async (ctx, { id, name }) => {
+    await requireAuth(ctx);
     await ctx.db.patch(id, { name, updatedAt: Date.now() });
   },
 });
@@ -56,6 +62,7 @@ export const moveToFolder = mutation({
     folderId: v.optional(v.id("folders")),
   },
   handler: async (ctx, { id, folderId }) => {
+    await requireAuth(ctx);
     await ctx.db.patch(id, { folderId, updatedAt: Date.now() });
   },
 });
@@ -63,6 +70,7 @@ export const moveToFolder = mutation({
 export const deleteCanvas = mutation({
   args: { id: v.id("canvases") },
   handler: async (ctx, { id }) => {
+    await requireAuth(ctx);
     const images = await ctx.db
       .query("images")
       .withIndex("by_canvas", (q) => q.eq("canvasId", id))

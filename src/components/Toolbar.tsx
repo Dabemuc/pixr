@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { UserButton } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -141,6 +142,10 @@ export default function Toolbar({
             </TooltipTrigger>
             <TooltipContent>Upload images (or drag & drop)</TooltipContent>
           </Tooltip>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <UserButton afterSignOutUrl="/" />
         </div>
       </div>
     </TooltipProvider>

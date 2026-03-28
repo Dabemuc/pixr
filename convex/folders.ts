@@ -1,9 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAuth } from "./_auth";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
+    await requireAuth(ctx);
     return ctx.db
       .query("folders")
       .withIndex("by_updated")
@@ -15,6 +17,7 @@ export const list = query({
 export const create = mutation({
   args: { name: v.string() },
   handler: async (ctx, { name }) => {
+    await requireAuth(ctx);
     return ctx.db.insert("folders", { name, updatedAt: Date.now(), position: Date.now() });
   },
 });
@@ -26,6 +29,7 @@ export const reorder = mutation({
     parentFolderId: v.optional(v.id("folders")),
   },
   handler: async (ctx, { id, position, parentFolderId }) => {
+    await requireAuth(ctx);
     await ctx.db.patch(id, { position, parentFolderId, updatedAt: Date.now() });
   },
 });
@@ -33,6 +37,7 @@ export const reorder = mutation({
 export const rename = mutation({
   args: { id: v.id("folders"), name: v.string() },
   handler: async (ctx, { id, name }) => {
+    await requireAuth(ctx);
     await ctx.db.patch(id, { name, updatedAt: Date.now() });
   },
 });
@@ -40,6 +45,7 @@ export const rename = mutation({
 export const deleteFolder = mutation({
   args: { id: v.id("folders") },
   handler: async (ctx, { id }) => {
+    await requireAuth(ctx);
     // Un-folder all canvases directly inside
     const canvases = await ctx.db
       .query("canvases")

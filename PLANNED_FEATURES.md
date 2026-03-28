@@ -3,7 +3,8 @@
 - [x] Hold shift to keep aspect ratio while resizing images
 - [~] Organize Canvases into folders
 - [x] Image descriptions
-- [ ] Textboxes and forms like arrows selectable from a toolbar
+- [x] Textboxes and forms like arrows selectable from a toolbar
+- [x] Multi select box
 - [ ] Clerk Goolge Auth
 
 ## Styling
