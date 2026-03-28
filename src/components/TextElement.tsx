@@ -204,7 +204,7 @@ export default function TextElement({
   }
 
   // ── Derived style values ──────────────────────────────────────────────────
-  const fontSize = currentStyle.isHeadline ? 28 : 14;
+  const fontSize = currentStyle.isHeadline ? 36 : 16;
   const resolvedBg = bgColorDraft || undefined;
   const resolvedText = textColorDraft || undefined;
   const borderStyle = currentStyle.showBorder

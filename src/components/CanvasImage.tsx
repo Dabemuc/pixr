@@ -390,7 +390,7 @@ export default function CanvasImage({
                 borderTop: "1px solid hsl(var(--border))",
                 borderRadius: "0 0 6px 6px",
               }}
-              className="w-full resize-none px-2 py-1.5 text-sm text-card-foreground placeholder:text-muted-foreground/40 outline-none leading-snug"
+              className="w-full resize-none px-2 py-1.5 text-base text-card-foreground placeholder:text-muted-foreground/40 outline-none leading-snug"
               onChange={(e) => setDescriptionDraft(e.target.value)}
               onFocus={() => {
                 isEditingRef.current = true;
