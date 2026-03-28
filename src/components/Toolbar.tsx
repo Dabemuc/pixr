@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ZoomIn, ZoomOut, RotateCcw, Upload, PanelLeftClose, PanelLeftOpen, Share2, Check, Copy, Globe, Lock } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Upload, PanelLeftClose, PanelLeftOpen, Share2, Check, Copy, Globe, Lock } from "lucide-react";
 
 interface ToolbarProps {
   canvasName: string;
@@ -19,6 +19,7 @@ interface ToolbarProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
+  onFitToScreen?: () => void;
   onUpload?: () => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -35,6 +36,7 @@ export default function Toolbar({
   onZoomIn,
   onZoomOut,
   onZoomReset,
+  onFitToScreen,
   onUpload,
   sidebarOpen,
   onToggleSidebar,
@@ -172,11 +174,11 @@ export default function Toolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onZoomReset}>
-                <RotateCcw className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onFitToScreen}>
+                <Maximize2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reset view</TooltipContent>
+            <TooltipContent>Fit to screen</TooltipContent>
           </Tooltip>
 
           {!readOnly && (

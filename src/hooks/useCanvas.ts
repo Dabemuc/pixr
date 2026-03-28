@@ -153,6 +153,21 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     setViewport((v) => ({ ...v, scale: Math.max(MIN_SCALE, v.scale / 1.2) }));
   }, []);
 
+  const fitViewport = useCallback((
+    contentX: number, contentY: number, contentW: number, contentH: number,
+    padding = 40
+  ) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewW = rect.width - padding * 2;
+    const viewH = rect.height - padding * 2;
+    const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min(viewW / contentW, viewH / contentH)));
+    const x = (rect.width - contentW * scale) / 2 - contentX * scale;
+    const y = (rect.height - contentH * scale) / 2 - contentY * scale;
+    setViewport({ x, y, scale });
+  }, [containerRef]);
+
   return {
     viewport,
     onPointerDown,
@@ -162,5 +177,6 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     resetViewport,
     zoomIn,
     zoomOut,
+    fitViewport,
   };
 }

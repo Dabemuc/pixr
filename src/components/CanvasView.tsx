@@ -150,7 +150,30 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     resetViewport,
     zoomIn,
     zoomOut,
+    fitViewport,
   } = useCanvas(containerRef);
+
+  const fitToScreen = useCallback(() => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    let found = false;
+    for (const img of images) {
+      found = true;
+      minX = Math.min(minX, img.x); minY = Math.min(minY, img.y);
+      maxX = Math.max(maxX, img.x + img.w); maxY = Math.max(maxY, img.y + img.h);
+    }
+    for (const s of shapes) {
+      found = true;
+      if (s.type === "text" && s.w != null && s.h != null) {
+        minX = Math.min(minX, s.x); minY = Math.min(minY, s.y);
+        maxX = Math.max(maxX, s.x + s.w); maxY = Math.max(maxY, s.y + s.h);
+      } else if (s.type === "arrow" && s.x2 != null && s.y2 != null) {
+        minX = Math.min(minX, s.x, s.x2); minY = Math.min(minY, s.y, s.y2);
+        maxX = Math.max(maxX, s.x, s.x2); maxY = Math.max(maxY, s.y, s.y2);
+      }
+    }
+    if (!found) { resetViewport(); return; }
+    fitViewport(minX, minY, maxX - minX, maxY - minY);
+  }, [images, shapes, fitViewport, resetViewport]);
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const isMultiSelect = selectedIds.size > 1;
@@ -486,6 +509,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         onZoomIn={zoomIn}
         onZoomOut={zoomOut}
         onZoomReset={resetViewport}
+        onFitToScreen={fitToScreen}
         onUpload={readOnly ? undefined : () => fileInputRef.current?.click()}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={onToggleSidebar}
