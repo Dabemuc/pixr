@@ -8,7 +8,7 @@ import { useShapes } from "@/hooks/useShapes";
 import Toolbar from "@/components/Toolbar";
 import BottomToolbar, { type Tool } from "@/components/BottomToolbar";
 import CanvasImage from "@/components/CanvasImage";
-import TextElement, { type TextShape, type TextStyle } from "@/components/TextElement";
+import TextElement, { type TextShape } from "@/components/TextElement";
 import ArrowElement, { type ArrowShape } from "@/components/ArrowElement";
 import GroupSelectionOverlay, {
   type Bounds,
