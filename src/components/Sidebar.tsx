@@ -822,7 +822,7 @@ export default function Sidebar({
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-full bg-background/90 backdrop-blur border-r border-border transition-all duration-200 overflow-hidden shrink-0",
+          "flex flex-col h-full bg-background/90 backdrop-blur border-r border-border transition-all duration-200 overflow-hidden",
           "fixed inset-y-0 left-0 z-40",
           open ? "w-64" : "w-0"
         )}

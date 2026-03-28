@@ -106,7 +106,7 @@ function AppContent() {
         />
       )}
 
-      <main className={`w-full overflow-hidden relative transition-[margin-left] duration-200 ${sidebarOpen ? "sm:ml-64" : ""}`}>
+      <main className="w-full overflow-hidden relative">
         {canvases === undefined ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <div className="text-sm">Loading…</div>
