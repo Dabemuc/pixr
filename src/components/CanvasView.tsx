@@ -16,6 +16,7 @@ import GroupSelectionOverlay, {
 } from "@/components/GroupSelectionOverlay";
 import UploadZone from "@/components/UploadZone";
 import { requestUploadUrl, uploadToS3, preprocessImage, replaceExtension } from "@/lib/s3";
+import { setClipboard, getClipboard, type ClipboardEntry } from "@/lib/canvasClipboard";
 import { useUndoRedo, type HistoryEntry } from "@/hooks/useUndoRedo";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
@@ -586,6 +587,81 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     }
   }
 
+  // ── Canvas copy / paste ────────────────────────────────────────────────────
+  const pasteCanvasElements = useCallback(async () => {
+    const clip = getClipboard();
+    if (!clip.length) return;
+
+    // Compute bounding box center of copied elements
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const item of clip) {
+      if (item.kind === "image") {
+        minX = Math.min(minX, item.x); minY = Math.min(minY, item.y);
+        maxX = Math.max(maxX, item.x + item.w); maxY = Math.max(maxY, item.y + item.h);
+      } else if (item.type === "text" && item.w != null && item.h != null) {
+        minX = Math.min(minX, item.x); minY = Math.min(minY, item.y);
+        maxX = Math.max(maxX, item.x + item.w); maxY = Math.max(maxY, item.y + item.h);
+      } else {
+        minX = Math.min(minX, item.x, item.x2 ?? item.x); minY = Math.min(minY, item.y, item.y2 ?? item.y);
+        maxX = Math.max(maxX, item.x, item.x2 ?? item.x); maxY = Math.max(maxY, item.y, item.y2 ?? item.y);
+      }
+    }
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+
+    // Place at cursor, falling back to canvas center
+    const vp = viewportRef.current;
+    const rect = containerRef.current?.getBoundingClientRect();
+    const target = lastCursorCanvasPos.current ?? {
+      x: (((rect?.width ?? 800) / 2) - vp.x) / vp.scale,
+      y: (((rect?.height ?? 600) / 2) - vp.y) / vp.scale,
+    };
+    const dx = target.x - cx, dy = target.y - cy;
+
+    const maxZ = Math.max(0, ...images.map(i => i.zIndex), ...shapes.map(s => s.zIndex));
+    let zOff = 0;
+    const newIds: Array<Id<"images"> | Id<"shapes">> = [];
+    const newKinds: Array<"image" | "shape"> = [];
+
+    for (const item of clip) {
+      if (item.kind === "image") {
+        const id = await addMutation({
+          canvasId, storageKey: item.storageKey, filename: item.filename,
+          mimeType: item.mimeType, width: item.width, height: item.height,
+          x: item.x + dx, y: item.y + dy, w: item.w, h: item.h,
+        });
+        newIds.push(id); newKinds.push("image");
+      } else if (item.type === "text") {
+        const id = await addShapeMutation({
+          canvasId, type: "text", x: item.x + dx, y: item.y + dy,
+          w: item.w, h: item.h, content: item.content, zIndex: maxZ + 1 + zOff++,
+          textAlign: item.textAlign, isHeadline: item.isHeadline,
+          showBorder: item.showBorder, bgColor: item.bgColor, textColor: item.textColor,
+        });
+        newIds.push(id); newKinds.push("shape");
+      } else {
+        const id = await addShapeMutation({
+          canvasId, type: "arrow",
+          x: item.x + dx, y: item.y + dy,
+          x2: (item.x2 ?? item.x) + dx, y2: (item.y2 ?? item.y) + dy,
+          zIndex: maxZ + 1 + zOff++,
+        });
+        newIds.push(id); newKinds.push("shape");
+      }
+    }
+
+    setSelectedIds(new Set(newIds.map(id => id as string)));
+
+    pushHistory({
+      undo: async () => {
+        for (let i = 0; i < newIds.length; i++) {
+          if (newKinds[i] === "image") await deleteMutation({ id: newIds[i] as Id<"images"> });
+          else await deleteShapeMutation({ id: newIds[i] as Id<"shapes"> });
+        }
+      },
+      redo: async () => {},
+    });
+  }, [addMutation, addShapeMutation, canvasId, deleteMutation, deleteShapeMutation, images, shapes, pushHistory]);
+
   // ── Keyboard shortcuts ─────────────────────────────────────────────────────
   useEffect(() => {
     if (readOnly) return;
@@ -599,6 +675,33 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       if (mod && notInInput) {
         if (e.key === "z" && !e.shiftKey) { e.preventDefault(); void undo(); return; }
         if ((e.key === "y") || (e.key === "z" && e.shiftKey)) { e.preventDefault(); void redo(); return; }
+      }
+
+      // Copy / Paste canvas elements
+      if (mod && notInInput && e.key === "c" && selectedIds.size > 0) {
+        const entries: ClipboardEntry[] = [];
+        for (const id of selectedIds) {
+          const img = images.find(i => i._id === id);
+          if (img) {
+            entries.push({ kind: "image", storageKey: img.storageKey, filename: img.filename,
+              mimeType: img.mimeType, width: img.width, height: img.height,
+              x: img.x, y: img.y, w: img.w, h: img.h,
+              description: img.description, descriptionAlign: img.descriptionAlign });
+          } else {
+            const shape = shapes.find(s => s._id === id);
+            if (shape) entries.push({ kind: "shape", type: shape.type, x: shape.x, y: shape.y,
+              w: shape.w, h: shape.h, x2: shape.x2, y2: shape.y2, content: shape.content,
+              zIndex: shape.zIndex, textAlign: shape.textAlign, isHeadline: shape.isHeadline,
+              showBorder: shape.showBorder, bgColor: shape.bgColor, textColor: shape.textColor });
+          }
+        }
+        setClipboard(entries);
+        return;
+      }
+      if (mod && notInInput && e.key === "v" && getClipboard().length > 0) {
+        e.preventDefault(); // prevent system paste event
+        void pasteCanvasElements();
+        return;
       }
 
       const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
@@ -646,7 +749,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIds, images, shapes, deleteMutation, deleteShapeMutation, addShapeMutation, canvasId, undo, redo, pushHistory]);
+  }, [selectedIds, images, shapes, deleteMutation, deleteShapeMutation, addShapeMutation, canvasId, undo, redo, pushHistory, pasteCanvasElements]);
 
   // ── Upload ─────────────────────────────────────────────────────────────────
   const handleUpload = useCallback(
