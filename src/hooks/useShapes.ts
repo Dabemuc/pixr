@@ -61,24 +61,24 @@ export function useShapes(canvasId: Id<"canvases">) {
 
   const commitMove = useCallback(
     async (id: Id<"shapes">, x: number, y: number) => {
-      clearLocalOverride(id);
       await moveMutation({ id, x, y });
+      clearLocalOverride(id);
     },
     [moveMutation, clearLocalOverride]
   );
 
   const commitResize = useCallback(
     async (id: Id<"shapes">, x: number, y: number, w: number, h: number) => {
-      clearLocalOverride(id);
       await resizeMutation({ id, x, y, w, h });
+      clearLocalOverride(id);
     },
     [resizeMutation, clearLocalOverride]
   );
 
   const commitMoveArrow = useCallback(
     async (id: Id<"shapes">, x: number, y: number, x2: number, y2: number) => {
-      clearLocalOverride(id);
       await moveArrowMutation({ id, x, y, x2, y2 });
+      clearLocalOverride(id);
     },
     [moveArrowMutation, clearLocalOverride]
   );
