@@ -467,10 +467,10 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   // ── Canvas pointer handlers ────────────────────────────────────────────────
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (e.button === 1) { midMouseDown(e); return; }
-    // Move focus to the canvas container so paste events are no longer blocked by
-    // lingering textarea/input focus (especially on Windows Chromium/Edge).
+    // Blur any focused input/textarea when clicking the canvas background so that
+    // paste events (Ctrl/Cmd+V) land on document.body and aren't blocked by the guard.
     if ((e.target as HTMLElement).dataset.canvasBg === "true") {
-      e.currentTarget.focus();
+      (document.activeElement as HTMLElement | null)?.blur();
     }
     if (readOnly) {
       // In read-only mode only allow panning via left-drag on background
@@ -779,9 +779,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         <div
           ref={containerRef}
           className="w-full h-full pt-[44px]"
-          tabIndex={-1}
           style={{
-            outline: "none",
             cursor: activeTool === "select" ? "grab" : "crosshair",
             backgroundImage: viewport.scale < 0.25 ? "none" : "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
             backgroundSize: `${24 * viewport.scale}px ${24 * viewport.scale}px`,
