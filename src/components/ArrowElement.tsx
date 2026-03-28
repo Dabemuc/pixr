@@ -88,6 +88,7 @@ export default function ArrowElement({
   return (
     <svg
       viewBox={`${svgLeft} ${svgTop} ${svgWidth} ${svgHeight}`}
+      data-canvas-bg="true"
       style={{
         position: "absolute",
         left: svgLeft,
