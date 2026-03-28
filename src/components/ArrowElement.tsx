@@ -13,8 +13,9 @@ export interface ArrowShape {
 interface ArrowElementProps {
   shape: ArrowShape;
   selected: boolean;
+  isGrouped?: boolean;
   scale: number;
-  onSelect: () => void;
+  onSelect: (addToSelection?: boolean) => void;
   onMoveOptimistic: (id: string, x: number, y: number, x2: number, y2: number) => void;
   onCommitMove: (id: Id<"shapes">, x: number, y: number, x2: number, y2: number) => Promise<void>;
 }
@@ -22,6 +23,7 @@ interface ArrowElementProps {
 export default function ArrowElement({
   shape,
   selected,
+  isGrouped = false,
   scale,
   onSelect,
   onMoveOptimistic,
@@ -123,9 +125,10 @@ export default function ArrowElement({
         onPointerDown={(e) => {
           if (!selected) {
             e.stopPropagation();
-            onSelect();
+            onSelect(e.shiftKey);
             return;
           }
+          if (isGrouped) { e.stopPropagation(); return; }
           startDrag("body", e, e.currentTarget);
         }}
       />
@@ -143,7 +146,7 @@ export default function ArrowElement({
       />
 
       {/* Endpoint handles when selected */}
-      {selected && (
+      {selected && !isGrouped && (
         <>
           <circle
             cx={shape.x}

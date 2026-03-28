@@ -45,8 +45,9 @@ interface ImageData {
 interface CanvasImageProps {
   image: ImageData;
   selected: boolean;
+  isGrouped?: boolean;
   scale: number;
-  onSelect: () => void;
+  onSelect: (addToSelection?: boolean) => void;
   onDeselect: () => void;
   onMoveOptimistic: (id: string, x: number, y: number) => void;
   onCommitMove: (id: Id<"images">, x: number, y: number) => Promise<void>;
@@ -89,6 +90,7 @@ const MIN_SIZE = 50;
 export default function CanvasImage({
   image,
   selected,
+  isGrouped = false,
   scale,
   onSelect,
   onDeselect,
@@ -202,9 +204,10 @@ export default function CanvasImage({
     e.stopPropagation();
     if (e.button !== 0) return;
     if (!selected) {
-      onSelect();
+      onSelect(e.shiftKey);
       return;
     }
+    if (isGrouped) return;
     isDragging.current = true;
     dragStart.current = { px: e.clientX, py: e.clientY, ix: image.x, iy: image.y };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -338,7 +341,7 @@ export default function CanvasImage({
                 />
               )}
 
-              {selected && handles.map((h) => (
+              {selected && !isGrouped && handles.map((h) => (
                 <div key={h} style={handlePosition(h)} onPointerDown={(e) => handleResizePointerDown(h, e)} />
               ))}
             </div>

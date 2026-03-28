@@ -30,8 +30,9 @@ export interface TextShape {
 interface TextElementProps {
   shape: TextShape;
   selected: boolean;
+  isGrouped?: boolean;
   scale: number;
-  onSelect: () => void;
+  onSelect: (addToSelection?: boolean) => void;
   onMoveOptimistic: (id: string, x: number, y: number) => void;
   onCommitMove: (id: Id<"shapes">, x: number, y: number) => Promise<void>;
   onResizeOptimistic: (id: string, x: number, y: number, w: number, h: number) => void;
@@ -43,6 +44,7 @@ interface TextElementProps {
 export default function TextElement({
   shape,
   selected,
+  isGrouped = false,
   scale,
   onSelect,
   onMoveOptimistic,
@@ -75,10 +77,10 @@ export default function TextElement({
     e.stopPropagation();
     if (e.button !== 0) return;
     if (!selected) {
-      onSelect();
+      onSelect(e.shiftKey);
       return;
     }
-    if (isEditing) return;
+    if (isEditing || isGrouped) return;
     isDragging.current = true;
     dragStart.current = { px: e.clientX, py: e.clientY, ix: shape.x, iy: shape.y };
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -252,7 +254,7 @@ export default function TextElement({
         </div>
       )}
 
-      {selected &&
+      {selected && !isGrouped &&
         HANDLES.map((h) => (
           <div
             key={h}

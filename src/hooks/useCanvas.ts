@@ -16,37 +16,40 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
   const viewportRef = useRef(viewport);
   viewportRef.current = viewport;
 
-  // Non-passive wheel handler for zoom
+  // Wheel: Ctrl/pinch = zoom, plain scroll = pan (trackpad two-finger)
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const factor = e.deltaY < 0 ? 1.1 : 0.9;
-      const rect = el.getBoundingClientRect();
-      const cx = e.clientX - rect.left;
-      const cy = e.clientY - rect.top;
-
-      setViewport((v) => {
-        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale * factor));
-        const newX = cx - (cx - v.x) * (newScale / v.scale);
-        const newY = cy - (cy - v.y) * (newScale / v.scale);
-        return { x: newX, y: newY, scale: newScale };
-      });
+      if (e.ctrlKey) {
+        const factor = e.deltaY < 0 ? 1.1 : 0.9;
+        const rect = el.getBoundingClientRect();
+        const cx = e.clientX - rect.left;
+        const cy = e.clientY - rect.top;
+        setViewport((v) => {
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, v.scale * factor));
+          const newX = cx - (cx - v.x) * (newScale / v.scale);
+          const newY = cy - (cy - v.y) * (newScale / v.scale);
+          return { x: newX, y: newY, scale: newScale };
+        });
+      } else {
+        setViewport((v) => ({ ...v, x: v.x - e.deltaX, y: v.y - e.deltaY }));
+      }
     };
 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
   }, [containerRef]);
 
+  // Middle-mouse-button pan
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    // Only pan if clicking on the background (not an image)
-    if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
+    if (e.button !== 1) return;
     isPanning.current = true;
     lastPointer.current = { x: e.clientX, y: e.clientY };
     e.currentTarget.setPointerCapture(e.pointerId);
+    e.preventDefault();
   }, []);
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
@@ -73,14 +76,6 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     setViewport((v) => ({ ...v, scale: Math.max(MIN_SCALE, v.scale / 1.2) }));
   }, []);
 
-  const screenToCanvas = useCallback(
-    (sx: number, sy: number, rect: DOMRect) => ({
-      x: (sx - rect.left - viewportRef.current.x) / viewportRef.current.scale,
-      y: (sy - rect.top - viewportRef.current.y) / viewportRef.current.scale,
-    }),
-    []
-  );
-
   return {
     viewport,
     onPointerDown,
@@ -89,6 +84,5 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     resetViewport,
     zoomIn,
     zoomOut,
-    screenToCanvas,
   };
 }
