@@ -31,6 +31,8 @@ export const add = mutation({
     y: v.number(),
     w: v.number(),
     h: v.number(),
+    description: v.optional(v.string()),
+    descriptionAlign: v.optional(v.union(v.literal("left"), v.literal("center"))),
   },
   handler: async (ctx, args) => {
     await requireAuth(ctx);

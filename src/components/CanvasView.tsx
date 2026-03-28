@@ -628,6 +628,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           canvasId, storageKey: item.storageKey, filename: item.filename,
           mimeType: item.mimeType, width: item.width, height: item.height,
           x: item.x + dx, y: item.y + dy, w: item.w, h: item.h,
+          description: item.description, descriptionAlign: item.descriptionAlign,
         });
         newIds.push(id); newKinds.push("image");
       } else if (item.type === "text") {
