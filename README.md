@@ -146,7 +146,7 @@ R2 is fully S3-compatible — no code changes needed. Use these values:
 |---|---|
 | `S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
 | `S3_REGION` | `auto` |
-| `S3_FORCE_PATH_STYLE` | `false` |
+| `S3_FORCE_PATH_STYLE` | `true` |
 
 Get your **Account ID** from the Cloudflare dashboard home page. Generate **Access Key ID** and **Secret Access Key** under R2 → Manage R2 API Tokens.
 
