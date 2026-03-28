@@ -90,7 +90,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
       <Sidebar
         canvases={canvases ?? []}
         activeCanvasId={activeCanvasId}

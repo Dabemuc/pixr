@@ -785,6 +785,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           ref={containerRef}
           className="w-full h-full pt-[44px]"
           style={{
+            touchAction: "none",
             cursor: activeTool === "select" ? "grab" : "crosshair",
             backgroundImage: viewport.scale < 0.25 ? "none" : "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
             backgroundSize: `${24 * viewport.scale}px ${24 * viewport.scale}px`,
