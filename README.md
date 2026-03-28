@@ -70,6 +70,7 @@ Then set environment variables in the [Convex dashboard](https://dashboard.conve
 
 | Variable | Value |
 |---|---|
+| `CLERK_JWT_ISSUER_DOMAIN` | Clerk dashboard → **JWT Templates → Convex → Issuer** field |
 | `S3_ENDPOINT` | See [Storage providers](#storage-providers) below |
 | `S3_BUCKET` | Your bucket name |
 | `S3_ACCESS_KEY_ID` | Your access key |
