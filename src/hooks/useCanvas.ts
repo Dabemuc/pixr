@@ -67,6 +67,7 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
         }
         return;
       }
+      if (!el) return;
       e.preventDefault(); // block browser native pinch-zoom
 
       const [t1, t2] = Array.from(e.touches);
