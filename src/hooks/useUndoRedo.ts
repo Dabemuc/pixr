@@ -1,8 +1,8 @@
 import { useRef, useState, useCallback } from "react";
 
 export type HistoryEntry = {
-  undo: () => Promise<void> | void;
-  redo: () => Promise<void> | void;
+  undo: () => Promise<unknown> | void;
+  redo: () => Promise<unknown> | void;
 };
 
 const MAX_HISTORY = 50;
