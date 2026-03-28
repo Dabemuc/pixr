@@ -108,6 +108,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   } | null>(null);
 
   const groupOpRef = useRef<GroupOpState | null>(null);
+  const panStartClientRef = useRef<{ x: number; y: number } | null>(null);
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
@@ -320,6 +321,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
     if (activeTool === "select") {
       startPan(e.clientX, e.clientY);
+      panStartClientRef.current = { x: e.clientX, y: e.clientY };
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
@@ -347,8 +349,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     setDrawState((d) => d ? { ...d, currentX: pos.x, currentY: pos.y } : null);
   }
 
-  async function handlePointerUp() {
+  async function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
     midMouseUp();
+    // Deselect on click (not drag) on background with select tool
+    if (activeTool === "select" && panStartClientRef.current) {
+      const dx = e.clientX - panStartClientRef.current.x;
+      const dy = e.clientY - panStartClientRef.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 4) setSelectedIds(new Set());
+      panStartClientRef.current = null;
+    }
     if (activeTool === "boxselect") {
       if (boxSelect) {
         const { startX, startY, currentX, currentY } = boxSelect;
