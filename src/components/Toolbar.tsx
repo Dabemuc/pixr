@@ -91,7 +91,7 @@ export default function Toolbar({
 
   return (
     <TooltipProvider>
-      <div className={`absolute top-0 right-0 z-50 flex items-center gap-2 px-3 h-[44px] bg-background/90 backdrop-blur border-b border-border pointer-events-auto transition-[left] duration-200 ${sidebarOpen ? "left-64" : "left-0"}`}>
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 px-3 h-[44px] bg-background/90 backdrop-blur border-b border-border pointer-events-auto">
         {!readOnly && (
           <Tooltip>
             <TooltipTrigger asChild>

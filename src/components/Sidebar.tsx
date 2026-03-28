@@ -822,10 +822,11 @@ export default function Sidebar({
     <TooltipProvider>
       <aside
         className={cn(
-          "flex flex-col h-full bg-background/90 backdrop-blur border-r border-border transition-all duration-200 overflow-hidden",
-          "fixed inset-y-0 left-0 z-40",
+          "flex flex-col bg-background/90 backdrop-blur border-r border-border transition-all duration-200 overflow-hidden",
+          "fixed bottom-0 left-0 z-40",
           open ? "w-64" : "w-0"
         )}
+        style={{ top: "calc(44px + env(safe-area-inset-top, 0px))" }}
       >
         {/* Header — same height as the top toolbar so the border-b lines up */}
         <div className="flex items-center justify-between px-4 h-[44px] shrink-0 border-b border-border">
