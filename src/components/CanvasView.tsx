@@ -538,7 +538,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           style={{
             cursor: activeTool === "select" ? "grab" : "crosshair",
             backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
+            backgroundSize: `${24 * viewport.scale}px ${24 * viewport.scale}px`,
+            backgroundPosition: `${viewport.x}px ${viewport.y + TOOLBAR_HEIGHT}px`,
           }}
           data-canvas-bg="true"
           onPointerDown={handlePointerDown}
