@@ -637,7 +637,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         setDrawState(null);
         setBoxSelect(null);
       }
-      if (notInInput && !mod) {
+      if (notInInput && !mod && selectedIds.size === 0) {
         if (e.key === "v" || e.key === "V") setActiveTool("select");
         if (e.key === "b" || e.key === "B") setActiveTool("boxselect");
         if (e.key === "t" || e.key === "T") setActiveTool("text");
