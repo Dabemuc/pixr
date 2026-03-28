@@ -681,13 +681,10 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       ) return;
 
       const items = Array.from(e.clipboardData?.items ?? []);
-      console.log("[paste] items:", items.map((i) => `${i.kind}:${i.type}`));
       const imageItem = items.find((item) => item.type.startsWith("image/"));
-      console.log("[paste] imageItem:", imageItem ? imageItem.type : "none");
       if (!imageItem) return;
       e.preventDefault();
       const file = imageItem.getAsFile();
-      console.log("[paste] file:", file ? `${file.name} ${file.type} ${file.size}b` : "null");
       if (!file) return;
 
       const MAX_W = 600;
