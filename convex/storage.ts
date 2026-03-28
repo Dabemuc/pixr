@@ -45,11 +45,16 @@ export const getUploadUrl = httpAction(async (_ctx, request) => {
     return new Response(null, { headers: CORS_HEADERS });
   }
   try {
-    const { filename, mimeType, canvasId } = (await request.json()) as {
+    const { filename, mimeType, canvasId, fileSizeBytes } = (await request.json()) as {
       filename: string;
       mimeType: string;
       canvasId: string;
+      fileSizeBytes?: number;
     };
+    const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB post-compression
+    if (typeof fileSizeBytes === "number" && fileSizeBytes > MAX_UPLOAD_BYTES) {
+      return corsJson({ error: "File exceeds maximum allowed size after processing" }, 413);
+    }
     const storageKey = `${canvasId}/${Date.now()}-${filename}`;
     const client = getS3Client();
     const url = await getSignedUrl(

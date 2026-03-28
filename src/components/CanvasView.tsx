@@ -15,7 +15,7 @@ import GroupSelectionOverlay, {
   type ResizeHandle,
 } from "@/components/GroupSelectionOverlay";
 import UploadZone from "@/components/UploadZone";
-import { requestUploadUrl, uploadToS3, getImageDimensions } from "@/lib/s3";
+import { requestUploadUrl, uploadToS3, preprocessImage, replaceExtension } from "@/lib/s3";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -512,19 +512,23 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       };
 
       const filename = file.name || "pasted-image.png";
-      const toastId = toast.loading("Uploading pasted image…");
+      const toastId = toast.loading("Processing pasted image…");
       try {
-        const [{ uploadUrl, storageKey }, { width, height }] = await Promise.all([
-          requestUploadUrl({ filename, mimeType: file.type, canvasId }),
-          getImageDimensions(file),
-        ]);
-        await uploadToS3(file, uploadUrl, (pct) => {
+        const { blob, width, height, mimeType: outputMimeType } =
+          await preprocessImage(file);
+        const outputFilename = replaceExtension(filename, outputMimeType);
+
+        toast.loading("Uploading pasted image…", { id: toastId });
+        const { uploadUrl, storageKey } = await requestUploadUrl({
+          filename: outputFilename, mimeType: outputMimeType, canvasId, fileSizeBytes: blob.size,
+        });
+        await uploadToS3(blob, outputMimeType, uploadUrl, (pct) => {
           toast.loading(`Uploading… ${Math.round(pct * 100)}%`, { id: toastId });
         });
         const w = Math.min(width, MAX_W);
         const h = Math.round(w * (height / width));
         await handleUpload({
-          storageKey, filename, mimeType: file.type, width, height,
+          storageKey, filename, mimeType: outputMimeType, width, height,
           x: center.x - w / 2, y: center.y - h / 2, w, h,
         });
         toast.success("Image pasted", { id: toastId });
@@ -781,20 +785,24 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       Array.from(files).map(async (file, i) => {
         if (!ACCEPTED.includes(file.type)) { toast.error(`${file.name}: unsupported type`); return; }
         if (file.size > MAX_SIZE) { toast.error(`${file.name}: exceeds 20MB`); return; }
-        const toastId = toast.loading(`Uploading ${file.name}…`);
+        const toastId = toast.loading(`Processing ${file.name}…`);
         try {
-          const [{ uploadUrl, storageKey }, { width, height }] = await Promise.all([
-            requestUploadUrl({ filename: file.name, mimeType: file.type, canvasId }),
-            getImageDimensions(file),
-          ]);
-          await uploadToS3(file, uploadUrl, (pct) => {
+          const { blob, width, height, mimeType: outputMimeType } =
+            await preprocessImage(file);
+          const outputFilename = replaceExtension(file.name, outputMimeType);
+
+          toast.loading(`Uploading ${file.name}…`, { id: toastId });
+          const { uploadUrl, storageKey } = await requestUploadUrl({
+            filename: outputFilename, mimeType: outputMimeType, canvasId, fileSizeBytes: blob.size,
+          });
+          await uploadToS3(blob, outputMimeType, uploadUrl, (pct) => {
             toast.loading(`Uploading ${file.name}… ${Math.round(pct * 100)}%`, { id: toastId });
           });
           const aspect = height / width;
           const w = Math.min(width, MAX_W);
           const h = Math.round(w * aspect);
           await handleUpload({
-            storageKey, filename: file.name, mimeType: file.type, width, height,
+            storageKey, filename: file.name, mimeType: outputMimeType, width, height,
             x: center.x - w / 2 + i * 20, y: center.y - h / 2 + i * 20, w, h,
           });
           toast.success(`${file.name} uploaded`, { id: toastId });

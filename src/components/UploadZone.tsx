@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { requestUploadUrl, uploadToS3, getImageDimensions } from "@/lib/s3";
+import { requestUploadUrl, uploadToS3, preprocessImage, replaceExtension } from "@/lib/s3";
 import type { Id } from "../../convex/_generated/dataModel";
 import type { Viewport } from "@/hooks/useCanvas";
 
@@ -64,19 +64,21 @@ export default function UploadZone({
 
     await Promise.all(
       validFiles.map(async (file, i) => {
-        const toastId = toast.loading(`Uploading ${file.name}…`);
+        const toastId = toast.loading(`Processing ${file.name}…`);
         try {
-          const [{ uploadUrl, storageKey }, { width, height }] =
-            await Promise.all([
-              requestUploadUrl({
-                filename: file.name,
-                mimeType: file.type,
-                canvasId,
-              }),
-              getImageDimensions(file),
-            ]);
+          const { blob, width, height, mimeType: outputMimeType } =
+            await preprocessImage(file);
+          const outputFilename = replaceExtension(file.name, outputMimeType);
 
-          await uploadToS3(file, uploadUrl, (pct) => {
+          toast.loading(`Uploading ${file.name}…`, { id: toastId });
+          const { uploadUrl, storageKey } = await requestUploadUrl({
+            filename: outputFilename,
+            mimeType: outputMimeType,
+            canvasId,
+            fileSizeBytes: blob.size,
+          });
+
+          await uploadToS3(blob, outputMimeType, uploadUrl, (pct) => {
             toast.loading(`Uploading ${file.name}… ${Math.round(pct * 100)}%`, {
               id: toastId,
             });
@@ -94,7 +96,7 @@ export default function UploadZone({
           await onUpload({
             storageKey,
             filename: file.name,
-            mimeType: file.type,
+            mimeType: outputMimeType,
             width,
             height,
             x: center.x - w / 2 + offsetX,
