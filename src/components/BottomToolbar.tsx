@@ -17,7 +17,8 @@ interface BottomToolbarProps {
 export default function BottomToolbar({ activeTool, onSelectTool }: BottomToolbarProps) {
   return (
     <div
-      className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/95 backdrop-blur-sm border shadow-lg"
+      className="absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-0.5 px-2 py-1.5 rounded-xl bg-background/95 backdrop-blur-sm border shadow-lg"
+      style={{ bottom: "max(1.5rem, calc(env(safe-area-inset-bottom) + 0.5rem))" }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >

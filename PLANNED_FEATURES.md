@@ -6,7 +6,12 @@
 - [x] Textboxes and forms like arrows selectable from a toolbar
 - [x] Multi select box
 - [x] Clerk Goolge Auth
-- [ ] Sharing canvases to not logged in users
+- [x] Sharing canvases to not logged in users
+- [ ] Mobile support
+
+## Fixes
+
+- [ ] Delete folders with all contents instead of moving to the top
 
 ## Styling
 

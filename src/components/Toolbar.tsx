@@ -146,7 +146,7 @@ export default function Toolbar({
         <div className="flex items-center gap-1 shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onZoomOut}>
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onZoomOut}>
                 <ZoomOut className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -154,7 +154,7 @@ export default function Toolbar({
           </Tooltip>
 
           <button
-            className="text-xs tabular-nums min-w-[48px] text-center px-1 hover:text-primary transition-colors"
+            className="text-xs tabular-nums min-w-[40px] text-center px-1 hover:text-primary transition-colors"
             onClick={onZoomReset}
             title="Reset zoom"
           >
@@ -163,7 +163,7 @@ export default function Toolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onZoomIn}>
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onZoomIn}>
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -172,7 +172,7 @@ export default function Toolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onZoomReset}>
+              <Button variant="ghost" size="icon" className="hidden sm:flex h-8 w-8" onClick={onZoomReset}>
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
@@ -187,7 +187,7 @@ export default function Toolbar({
                 <TooltipTrigger asChild>
                   <Button size="sm" className="h-8 gap-1.5" onClick={onUpload}>
                     <Upload className="h-3.5 w-3.5" />
-                    Upload
+                    <span className="hidden sm:inline">Upload</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Upload images (or drag & drop)</TooltipContent>

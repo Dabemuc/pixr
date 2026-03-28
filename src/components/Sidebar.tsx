@@ -100,6 +100,10 @@ function gapKey(parentId: string | null, afterId: string | null) {
   return `gap:${parentId ?? "root"}:after:${afterId ?? "null"}`;
 }
 
+// True on phones/tablets where primary input is touch (no hover)
+const isTouchDevice =
+  typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
 export default function Sidebar({
   canvases,
   activeCanvasId,
@@ -459,17 +463,17 @@ export default function Sidebar({
 
     return (
       <div
-        draggable={!isRenaming}
+        draggable={!isRenaming && !isTouchDevice}
         style={{ marginLeft: `${indent}px` }}
         className={cn(
           "group flex items-center gap-2 px-3 py-2 rounded-md mx-2 cursor-pointer transition-colors",
           isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted"
         )}
         onClick={() => { if (!isRenaming) onSelectCanvas(canvas._id); }}
-        onDragStart={(e) => onItemDragStart(e, { type: "canvas", id: canvasId })}
-        onDragEnd={onItemDragEnd}
-        onDragOver={(e) => activateItemDragOver(e, canvasId, parentId, prevSiblingId, "canvas")}
-        onDrop={(e) => handleItemDrop(e, canvasId, parentId, prevSiblingId, "canvas")}
+        onDragStart={isTouchDevice ? undefined : (e) => onItemDragStart(e, { type: "canvas", id: canvasId })}
+        onDragEnd={isTouchDevice ? undefined : onItemDragEnd}
+        onDragOver={isTouchDevice ? undefined : (e) => activateItemDragOver(e, canvasId, parentId, prevSiblingId, "canvas")}
+        onDrop={isTouchDevice ? undefined : (e) => handleItemDrop(e, canvasId, parentId, prevSiblingId, "canvas")}
       >
         <div className="flex-1 min-w-0">
           {isRenaming ? (
@@ -512,6 +516,7 @@ export default function Sidebar({
                 size="icon"
                 className={cn(
                   "h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100",
+                  isTouchDevice && "opacity-100",
                   isActive && "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20"
                 )}
                 onClick={(e) => e.stopPropagation()}
@@ -612,13 +617,13 @@ export default function Sidebar({
             "group flex items-center gap-1 px-2 py-1 mx-2 mt-0.5 rounded-md hover:bg-muted transition-colors",
             isDropTarget && "bg-primary/10 ring-1 ring-primary/40"
           )}
-          onDragOver={(e) => activateItemDragOver(e, folderId, parentId, prevSiblingId, "folder")}
-          onDragLeave={(e) => {
+          onDragOver={isTouchDevice ? undefined : (e) => activateItemDragOver(e, folderId, parentId, prevSiblingId, "folder")}
+          onDragLeave={isTouchDevice ? undefined : (e) => {
             if (!e.currentTarget.contains(e.relatedTarget as Node)) {
               setDragOverFolderId(null);
             }
           }}
-          onDrop={(e) => handleItemDrop(e, folderId, parentId, prevSiblingId, "folder")}
+          onDrop={isTouchDevice ? undefined : (e) => handleItemDrop(e, folderId, parentId, prevSiblingId, "folder")}
         >
           {isRenaming ? (
             <Input
@@ -635,13 +640,16 @@ export default function Sidebar({
             />
           ) : (
             <button
-              className="flex items-center gap-1.5 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing"
-              draggable
-              onDragStart={(e) => {
+              className={cn(
+                "flex items-center gap-1.5 flex-1 min-w-0 text-left",
+                !isTouchDevice && "cursor-grab active:cursor-grabbing"
+              )}
+              draggable={!isTouchDevice}
+              onDragStart={isTouchDevice ? undefined : (e) => {
                 e.stopPropagation();
                 onItemDragStart(e, { type: "folder", id: folderId });
               }}
-              onDragEnd={onItemDragEnd}
+              onDragEnd={isTouchDevice ? undefined : onItemDragEnd}
               onClick={() => toggleFolderCollapsed(folderId)}
             >
               <ChevronRight
@@ -666,7 +674,7 @@ export default function Sidebar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+                  className={cn("h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100", isTouchDevice && "opacity-100")}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" />

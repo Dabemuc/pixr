@@ -56,7 +56,7 @@ function AppContent() {
   const createMutation = useMutation(api.canvases.create);
 
   const [activeCanvasId, setActiveCanvasId] = useState<Id<"canvases"> | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 640);
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
 
