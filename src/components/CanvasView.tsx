@@ -470,7 +470,9 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     // Blur any focused input/textarea when clicking the canvas background so that
     // paste events (Ctrl/Cmd+V) land on document.body and aren't blocked by the guard.
     if ((e.target as HTMLElement).dataset.canvasBg === "true") {
-      (document.activeElement as HTMLElement | null)?.blur();
+      const active = document.activeElement as HTMLElement | null;
+      console.log("[pointerdown] blur active element:", active?.tagName, active?.className);
+      active?.blur();
     }
     if (readOnly) {
       // In read-only mode only allow panning via left-drag on background
@@ -670,16 +672,25 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   useEffect(() => {
     if (readOnly) return;
     async function handlePaste(e: ClipboardEvent) {
+      const target = e.target as HTMLElement;
+      console.log("[paste] fired — target:", target.tagName, target.className, "| activeElement:", document.activeElement?.tagName, (document.activeElement as HTMLElement)?.className);
+
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
-      ) return;
+      ) {
+        console.log("[paste] blocked by input guard");
+        return;
+      }
 
       const items = Array.from(e.clipboardData?.items ?? []);
+      console.log("[paste] items:", items.map((i) => `${i.kind}:${i.type}`));
       const imageItem = items.find((item) => item.type.startsWith("image/"));
+      console.log("[paste] imageItem:", imageItem ? imageItem.type : "none");
       if (!imageItem) return;
       e.preventDefault();
       const file = imageItem.getAsFile();
+      console.log("[paste] file:", file ? `${file.name} ${file.type} ${file.size}b` : "null");
       if (!file) return;
 
       const MAX_W = 600;
