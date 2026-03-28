@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ZoomIn, ZoomOut, Maximize2, Upload, PanelLeftClose, PanelLeftOpen, Share2, Check, Copy, Globe, Lock, Undo2, Redo2 } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Upload, PanelLeftClose, PanelLeftOpen, Share2, Check, Copy, Globe, Lock } from "lucide-react";
 
 interface ToolbarProps {
   canvasName: string;
@@ -21,10 +21,6 @@ interface ToolbarProps {
   onZoomReset: () => void;
   onFitToScreen?: () => void;
   onUpload?: () => void;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
   isPublic?: boolean;
@@ -42,10 +38,6 @@ export default function Toolbar({
   onZoomReset,
   onFitToScreen,
   onUpload,
-  onUndo,
-  onRedo,
-  canUndo = false,
-  canRedo = false,
   sidebarOpen,
   onToggleSidebar,
   isPublic = false,
@@ -191,26 +183,6 @@ export default function Toolbar({
 
           {!readOnly && (
             <>
-              <div className="w-px h-5 bg-border mx-1" />
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onUndo} disabled={!canUndo}>
-                    <Undo2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Undo</TooltipContent>
-              </Tooltip>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onRedo} disabled={!canRedo}>
-                    <Redo2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Redo</TooltipContent>
-              </Tooltip>
-
               <div className="w-px h-5 bg-border mx-1" />
 
               <Tooltip>

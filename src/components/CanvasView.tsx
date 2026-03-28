@@ -760,10 +760,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         onZoomReset={resetViewport}
         onFitToScreen={fitToScreen}
         onUpload={readOnly ? undefined : () => fileInputRef.current?.click()}
-        onUndo={readOnly ? undefined : () => void undo()}
-        onRedo={readOnly ? undefined : () => void redo()}
-        canUndo={canUndo}
-        canRedo={canRedo}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={onToggleSidebar}
         isPublic={canvas?.isPublic ?? false}
@@ -1007,7 +1003,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         </div>
       </UploadZone>
 
-      {!readOnly && <BottomToolbar activeTool={activeTool} onSelectTool={setActiveTool} />}
+      {!readOnly && <BottomToolbar activeTool={activeTool} onSelectTool={setActiveTool} onUndo={() => void undo()} onRedo={() => void redo()} canUndo={canUndo} canRedo={canRedo} />}
     </div>
   );
 
