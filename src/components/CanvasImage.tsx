@@ -74,6 +74,7 @@ interface CanvasImageProps {
   onSendToBack: () => void;
   onDescriptionChange: (description: string) => void;
   onDescriptionAlignChange: (align: DescriptionAlign) => void;
+  onCopy: () => void;
 }
 
 type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
@@ -107,6 +108,7 @@ export default function CanvasImage({
   onSendToBack,
   onDescriptionChange,
   onDescriptionAlignChange,
+  onCopy,
 }: CanvasImageProps) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [imgError, setImgError] = useState(false);
@@ -360,6 +362,8 @@ export default function CanvasImage({
             </div>
           </ContextMenuTrigger>
           <ContextMenuContent>
+            <ContextMenuItem onClick={onCopy}>Copy</ContextMenuItem>
+            <ContextMenuSeparator />
             <ContextMenuItem onClick={onBringToFront}>Bring to Front</ContextMenuItem>
             <ContextMenuItem onClick={onSendToBack}>Send to Back</ContextMenuItem>
             <ContextMenuSeparator />

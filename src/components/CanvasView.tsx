@@ -20,6 +20,12 @@ import { setClipboard, getClipboard, type ClipboardEntry } from "@/lib/canvasCli
 import { useUndoRedo, type HistoryEntry } from "@/hooks/useUndoRedo";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 interface CanvasViewProps {
   canvasId: Id<"canvases">;
@@ -101,6 +107,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [hasClipboard, setHasClipboard] = useState(() => getClipboard().length > 0);
   const [boxSelect, setBoxSelect] = useState<{
     startX: number; startY: number; currentX: number; currentY: number;
   } | null>(null);
@@ -588,6 +595,11 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   }
 
   // ── Canvas copy / paste ────────────────────────────────────────────────────
+  function copyToCanvas(entries: ClipboardEntry[]) {
+    setClipboard(entries);
+    setHasClipboard(entries.length > 0);
+  }
+
   const pasteCanvasElements = useCallback(async () => {
     const clip = getClipboard();
     if (!clip.length) return;
@@ -696,7 +708,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
               showBorder: shape.showBorder, bgColor: shape.bgColor, textColor: shape.textColor });
           }
         }
-        setClipboard(entries);
+        copyToCanvas(entries);
         return;
       }
       if (mod && notInInput && e.key === "v" && getClipboard().length > 0) {
@@ -885,6 +897,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           }}
         />
 
+        <ContextMenu>
+        <ContextMenuTrigger asChild>
         <div
           ref={containerRef}
           className="w-full h-full pt-[44px]"
@@ -960,6 +974,11 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                     redo: () => descriptionAlignMutation({ id: img._id, align }),
                   });
                 }}
+                onCopy={() => copyToCanvas([{ kind: "image", storageKey: img.storageKey,
+                  filename: img.filename, mimeType: img.mimeType,
+                  width: img.width, height: img.height,
+                  x: img.x, y: img.y, w: img.w, h: img.h,
+                  description: img.description, descriptionAlign: img.descriptionAlign }])}
               />
             ))}
 
@@ -995,6 +1014,11 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                       }
                     }}
                     onDelete={(id) => void deleteShapeMutation({ id })}
+                    onCopy={() => copyToCanvas([{ kind: "shape", type: "text",
+                      x: shape.x, y: shape.y, w: shape.w, h: shape.h,
+                      content: shape.content, zIndex: shape.zIndex,
+                      textAlign: shape.textAlign, isHeadline: shape.isHeadline,
+                      showBorder: shape.showBorder, bgColor: shape.bgColor, textColor: shape.textColor }])}
                   />
                 );
               }
@@ -1009,6 +1033,10 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                     onSelect={(add) => (add ? toggleOne(shape._id) : selectOne(shape._id))}
                     onMoveOptimistic={setLocalArrow}
                     onCommitMove={wrappedCommitMoveArrow}
+                    onDelete={(id) => void deleteShapeMutation({ id })}
+                    onCopy={() => copyToCanvas([{ kind: "shape", type: "arrow",
+                      x: shape.x, y: shape.y, x2: shape.x2, y2: shape.y2,
+                      zIndex: shape.zIndex }])}
                   />
                 );
               }
@@ -1105,6 +1133,13 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
             </div>
           )}
         </div>
+        </ContextMenuTrigger>
+        {!readOnly && hasClipboard && (
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => void pasteCanvasElements()}>Paste</ContextMenuItem>
+          </ContextMenuContent>
+        )}
+        </ContextMenu>
       </UploadZone>
 
       {!readOnly && <BottomToolbar activeTool={activeTool} onSelectTool={setActiveTool} onUndo={() => void undo()} onRedo={() => void redo()} canUndo={canUndo} canRedo={canRedo} />}

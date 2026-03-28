@@ -1,6 +1,13 @@
 import { useRef, useState, useEffect } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
 import { AlignLeft, AlignCenter, AlignRight, Heading1, SquareDashed } from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 type ResizeHandle = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 
@@ -56,6 +63,7 @@ interface TextElementProps {
   onContentChange: (id: Id<"shapes">, content: string) => void;
   onStyleChange: (id: Id<"shapes">, style: TextStyle, prevStyle?: TextStyle) => void;
   onDelete: (id: Id<"shapes">) => void;
+  onCopy: () => void;
 }
 
 export default function TextElement({
@@ -70,6 +78,8 @@ export default function TextElement({
   onCommitResize,
   onContentChange,
   onStyleChange,
+  onDelete,
+  onCopy,
 }: TextElementProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(shape.content ?? "");
@@ -218,6 +228,8 @@ export default function TextElement({
   };
 
   return (
+    <ContextMenu>
+    <ContextMenuTrigger asChild>
     <div
       style={{
         position: "absolute", left: shape.x, top: shape.y,
@@ -419,5 +431,14 @@ export default function TextElement({
         </div>
       )}
     </div>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      <ContextMenuItem onClick={onCopy}>Copy</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem className="text-destructive" onClick={() => onDelete(shape._id)}>
+        Delete
+      </ContextMenuItem>
+    </ContextMenuContent>
+    </ContextMenu>
   );
 }

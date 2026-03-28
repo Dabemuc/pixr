@@ -1,5 +1,12 @@
 import { useRef } from "react";
 import type { Id } from "../../convex/_generated/dataModel";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 export interface ArrowShape {
   _id: Id<"shapes">;
@@ -18,6 +25,8 @@ interface ArrowElementProps {
   onSelect: (addToSelection?: boolean) => void;
   onMoveOptimistic: (id: string, x: number, y: number, x2: number, y2: number) => void;
   onCommitMove: (id: Id<"shapes">, x: number, y: number, x2: number, y2: number, prevX: number, prevY: number, prevX2: number, prevY2: number) => Promise<void>;
+  onDelete: (id: Id<"shapes">) => void;
+  onCopy: () => void;
 }
 
 export default function ArrowElement({
@@ -28,6 +37,8 @@ export default function ArrowElement({
   onSelect,
   onMoveOptimistic,
   onCommitMove,
+  onDelete,
+  onCopy,
 }: ArrowElementProps) {
   const isDragging = useRef<"body" | "start" | "end" | null>(null);
   const dragStart = useRef({ px: 0, py: 0, sx: 0, sy: 0, ex: 0, ey: 0 });
@@ -89,6 +100,8 @@ export default function ArrowElement({
   }
 
   return (
+    <ContextMenu>
+    <ContextMenuTrigger asChild>
     <svg
       viewBox={`${svgLeft} ${svgTop} ${svgWidth} ${svgHeight}`}
       data-canvas-bg="true"
@@ -175,5 +188,14 @@ export default function ArrowElement({
         </>
       )}
     </svg>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      <ContextMenuItem onClick={onCopy}>Copy</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem className="text-destructive" onClick={() => onDelete(shape._id)}>
+        Delete
+      </ContextMenuItem>
+    </ContextMenuContent>
+    </ContextMenu>
   );
 }
