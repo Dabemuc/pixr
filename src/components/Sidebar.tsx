@@ -537,7 +537,7 @@ export default function Sidebar({
               </DropdownMenuItem>
 
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
                   <FolderInput className="h-3.5 w-3.5 mr-2" />
                   Move to folder
                 </DropdownMenuSubTrigger>
@@ -545,7 +545,7 @@ export default function Sidebar({
                   {canvas.folderId && (
                     <>
                       <DropdownMenuItem
-                        onClick={() => void moveToFolderMutation({ id: canvas._id, folderId: undefined })}
+                        onClick={(e) => { e.stopPropagation(); void moveToFolderMutation({ id: canvas._id, folderId: undefined }); }}
                       >
                         <FolderMinus className="h-3.5 w-3.5 mr-2" />
                         Remove from folder
@@ -560,7 +560,7 @@ export default function Sidebar({
                     <DropdownMenuItem
                       key={folder._id}
                       disabled={canvas.folderId === folder._id}
-                      onClick={() => void moveToFolderMutation({ id: canvas._id, folderId: folder._id })}
+                      onClick={(e) => { e.stopPropagation(); void moveToFolderMutation({ id: canvas._id, folderId: folder._id }); }}
                     >
                       <Folder className="h-3.5 w-3.5 mr-2" />
                       {folder.name}
