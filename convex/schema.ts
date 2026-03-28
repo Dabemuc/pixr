@@ -37,7 +37,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     descriptionAlign: v.optional(v.union(v.literal("left"), v.literal("center"))),
     updatedAt: v.number(),
-  }).index("by_canvas", ["canvasId"]),
+  }).index("by_canvas", ["canvasId"]).index("by_storage_key", ["storageKey"]),
 
   shapes: defineTable({
     canvasId: v.id("canvases"),

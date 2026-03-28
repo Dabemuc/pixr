@@ -103,8 +103,15 @@ export const deleteImage = mutation({
     const image = await ctx.db.get(id);
     if (!image) return;
     await ctx.db.delete(id);
-    await ctx.scheduler.runAfter(0, internal.storage.deleteObjects, {
-      keys: [image.storageKey],
-    });
+    // Only delete the storage object if no other image record references the same key
+    const siblings = await ctx.db
+      .query("images")
+      .withIndex("by_storage_key", (q) => q.eq("storageKey", image.storageKey))
+      .first();
+    if (!siblings) {
+      await ctx.scheduler.runAfter(0, internal.storage.deleteObjects, {
+        keys: [image.storageKey],
+      });
+    }
   },
 });
