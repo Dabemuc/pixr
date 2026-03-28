@@ -34,11 +34,11 @@ export default function ArrowElement({
 
   const strokeColor = selected ? "#3b82f6" : "#64748b";
   const markerId = `arrow-head-${shape._id}`;
-  const handleR = 6 / scale;
+  const handleR = 6 / scale; // keep handles easy to tap at any zoom
 
   // Give the SVG real dimensions covering the arrow bounding box so the browser
   // actually paints the content (0x0 + overflow:visible is unreliable).
-  const PAD = 20 / scale;
+  const PAD = 20;
   const svgLeft = Math.min(shape.x, shape.x2) - PAD;
   const svgTop = Math.min(shape.y, shape.y2) - PAD;
   const svgWidth = Math.abs(shape.x2 - shape.x) + PAD * 2;
@@ -120,7 +120,7 @@ export default function ArrowElement({
         x2={shape.x2}
         y2={shape.y2}
         stroke="transparent"
-        strokeWidth={12 / scale}
+        strokeWidth={12}
         style={{ pointerEvents: "stroke", cursor: selected ? "move" : "pointer" }}
         onPointerDown={(e) => {
           if (!selected) {
@@ -140,7 +140,7 @@ export default function ArrowElement({
         x2={shape.x2}
         y2={shape.y2}
         stroke={strokeColor}
-        strokeWidth={2 / scale}
+        strokeWidth={2}
         markerEnd={`url(#${markerId})`}
         style={{ pointerEvents: "none" }}
       />
