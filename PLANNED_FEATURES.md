@@ -7,12 +7,15 @@
 - [x] Multi select box
 - [x] Clerk Goolge Auth
 - [x] Sharing canvases to not logged in users
-- [ ] Mobile support
+- [x] Mobile support
 
 ## Fixes
 
-- [ ] Delete folders with all contents instead of moving to the top
+- [x] Delete folders with all contents instead of moving to the top
+- [x] Enable moving folders into other folders via context menu
 
 ## Styling
 
-- [ ] Dotted canvas background with radius highlighting of dots on hover
+- [x] Dotted canvas background with radius highlighting of dots on hover
+- [x] top bar bottom to sidebar horizontal divider
+- [x] Dark mode improvements
