@@ -535,7 +535,11 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         <div
           ref={containerRef}
           className="w-full h-full pt-[44px]"
-          style={{ cursor: activeTool === "select" ? "grab" : "crosshair" }}
+          style={{
+            cursor: activeTool === "select" ? "grab" : "crosshair",
+            backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
           data-canvas-bg="true"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

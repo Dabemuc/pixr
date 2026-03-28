@@ -827,8 +827,8 @@ export default function Sidebar({
           open ? "w-64" : "w-0"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3">
+        {/* Header — same height as the top toolbar so the border-b lines up */}
+        <div className="flex items-center justify-between px-4 h-[44px] shrink-0 border-b border-border">
           <span className="font-semibold text-sm">Canvases</span>
           <div className="flex items-center gap-1">
             <Tooltip>
@@ -904,8 +904,6 @@ export default function Sidebar({
             </Tooltip>
           </div>
         </div>
-
-        <Separator />
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-1 flex flex-col">

@@ -83,7 +83,7 @@ export default function Toolbar({
 
   return (
     <TooltipProvider>
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 px-3 py-2 bg-background/90 backdrop-blur border-b border-border pointer-events-auto">
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-center gap-2 px-3 h-[44px] bg-background/90 backdrop-blur border-b border-border pointer-events-auto">
         {!readOnly && (
           <Tooltip>
             <TooltipTrigger asChild>
