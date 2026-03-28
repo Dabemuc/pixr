@@ -682,7 +682,8 @@ export default function Sidebar({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setRenamingFolderId(folder._id);
                     setRenameFolderDraft(folder.name);
                   }}
@@ -690,10 +691,53 @@ export default function Sidebar({
                   <Pencil className="h-3.5 w-3.5 mr-2" />
                   Rename
                 </DropdownMenuItem>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger onClick={(e) => e.stopPropagation()}>
+                    <FolderInput className="h-3.5 w-3.5 mr-2" />
+                    Move to folder
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {folder.parentFolderId && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void reorderFolderMutation({ id: folder._id, position: folder.position ?? Date.now(), parentFolderId: undefined });
+                          }}
+                        >
+                          <FolderMinus className="h-3.5 w-3.5 mr-2" />
+                          Remove from folder
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    {folders.filter((f) => f._id !== folder._id && !isFolderOrDescendant(folder._id as string, f._id as string)).length === 0 && (
+                      <DropdownMenuItem disabled>No other folders</DropdownMenuItem>
+                    )}
+                    {folders
+                      .filter((f) => f._id !== folder._id && !isFolderOrDescendant(folder._id as string, f._id as string))
+                      .map((f) => (
+                        <DropdownMenuItem
+                          key={f._id}
+                          disabled={folder.parentFolderId === f._id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void reorderFolderMutation({ id: folder._id, position: folder.position ?? Date.now(), parentFolderId: f._id });
+                          }}
+                        >
+                          <Folder className="h-3.5 w-3.5 mr-2" />
+                          {f.name}
+                        </DropdownMenuItem>
+                      ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="text-destructive"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setDeleteFolderId(folder._id);
                     setDeleteFolderName(folder.name);
                   }}
