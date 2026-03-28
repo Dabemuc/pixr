@@ -670,13 +670,10 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   useEffect(() => {
     if (readOnly) return;
     async function handlePaste(e: ClipboardEvent) {
-      const target = e.target as HTMLElement;
       if (
-        (target instanceof HTMLInputElement && target.type !== "file") ||
-        target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) return;
 
       const items = Array.from(e.clipboardData?.items ?? []);
       const imageItem = items.find((item) => item.type.startsWith("image/"));
@@ -776,7 +773,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
             if (!e.target.files) return;
             void processFilesDirect(e.target.files);
             e.target.value = "";
-            e.target.blur();
           }}
         />
 
