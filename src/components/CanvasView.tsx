@@ -381,42 +381,52 @@ export default function CanvasView({
               />
             )}
 
-            {drawState && activeTool === "arrow" && (
-              <svg
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  width: 0,
-                  height: 0,
-                  overflow: "visible",
-                  pointerEvents: "none",
-                }}
-              >
-                <defs>
-                  <marker
-                    id="preview-arrowhead"
-                    markerWidth="10"
-                    markerHeight="7"
-                    refX="9"
-                    refY="3.5"
-                    orient="auto"
-                  >
-                    <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-                  </marker>
-                </defs>
-                <line
-                  x1={drawState.startX}
-                  y1={drawState.startY}
-                  x2={drawState.currentX}
-                  y2={drawState.currentY}
-                  stroke="#3b82f6"
-                  strokeWidth={2 / viewport.scale}
-                  strokeDasharray={`${5 / viewport.scale} ${5 / viewport.scale}`}
-                  markerEnd="url(#preview-arrowhead)"
-                />
-              </svg>
-            )}
+            {drawState && activeTool === "arrow" && (() => {
+              const pad = 20 / viewport.scale;
+              const x1 = drawState.startX, y1 = drawState.startY;
+              const x2 = drawState.currentX, y2 = drawState.currentY;
+              const svgL = Math.min(x1, x2) - pad;
+              const svgT = Math.min(y1, y2) - pad;
+              const svgW = Math.abs(x2 - x1) + pad * 2;
+              const svgH = Math.abs(y2 - y1) + pad * 2;
+              return (
+                <svg
+                  viewBox={`${svgL} ${svgT} ${svgW} ${svgH}`}
+                  style={{
+                    position: "absolute",
+                    left: svgL,
+                    top: svgT,
+                    width: svgW,
+                    height: svgH,
+                    overflow: "visible",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <defs>
+                    <marker
+                      id="preview-arrowhead"
+                      markerWidth="10"
+                      markerHeight="7"
+                      refX="9"
+                      refY="3.5"
+                      orient="auto"
+                    >
+                      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                    </marker>
+                  </defs>
+                  <line
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#3b82f6"
+                    strokeWidth={2 / viewport.scale}
+                    strokeDasharray={`${5 / viewport.scale} ${5 / viewport.scale}`}
+                    markerEnd="url(#preview-arrowhead)"
+                  />
+                </svg>
+              );
+            })()}
           </div>
 
           {/* Empty canvas state */}

@@ -34,6 +34,14 @@ export default function ArrowElement({
   const markerId = `arrow-head-${shape._id}`;
   const handleR = 6 / scale;
 
+  // Give the SVG real dimensions covering the arrow bounding box so the browser
+  // actually paints the content (0x0 + overflow:visible is unreliable).
+  const PAD = 20 / scale;
+  const svgLeft = Math.min(shape.x, shape.x2) - PAD;
+  const svgTop = Math.min(shape.y, shape.y2) - PAD;
+  const svgWidth = Math.abs(shape.x2 - shape.x) + PAD * 2;
+  const svgHeight = Math.abs(shape.y2 - shape.y) + PAD * 2;
+
   function startDrag(
     type: "body" | "start" | "end",
     e: React.PointerEvent,
@@ -77,12 +85,13 @@ export default function ArrowElement({
 
   return (
     <svg
+      viewBox={`${svgLeft} ${svgTop} ${svgWidth} ${svgHeight}`}
       style={{
         position: "absolute",
-        left: 0,
-        top: 0,
-        width: 0,
-        height: 0,
+        left: svgLeft,
+        top: svgTop,
+        width: svgWidth,
+        height: svgHeight,
         overflow: "visible",
         zIndex: shape.zIndex,
       }}
