@@ -50,13 +50,17 @@ interface CanvasImageProps {
   onSelect: (addToSelection?: boolean) => void;
   onDeselect: () => void;
   onMoveOptimistic: (id: string, x: number, y: number) => void;
-  onCommitMove: (id: Id<"images">, x: number, y: number) => Promise<void>;
+  onCommitMove: (id: Id<"images">, x: number, y: number, prevX: number, prevY: number) => Promise<void>;
   onCommitResize: (
     id: Id<"images">,
     x: number,
     y: number,
     w: number,
-    h: number
+    h: number,
+    prevX: number,
+    prevY: number,
+    prevW: number,
+    prevH: number
   ) => Promise<void>;
   onResizeOptimistic: (
     id: string,
@@ -248,8 +252,17 @@ export default function CanvasImage({
   }
 
   function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (isDragging.current) { isDragging.current = false; void onCommitMove(image._id, image.x, image.y); }
-    if (isResizing.current) { isResizing.current = null; void onCommitResize(image._id, image.x, image.y, image.w, image.h); }
+    if (isDragging.current) {
+      isDragging.current = false;
+      void onCommitMove(image._id, image.x, image.y, dragStart.current.ix, dragStart.current.iy);
+    }
+    if (isResizing.current) {
+      isResizing.current = null;
+      void onCommitResize(
+        image._id, image.x, image.y, image.w, image.h,
+        resizeStart.current.ix, resizeStart.current.iy, resizeStart.current.iw, resizeStart.current.ih
+      );
+    }
     void e;
   }
 

@@ -16,6 +16,7 @@ import GroupSelectionOverlay, {
 } from "@/components/GroupSelectionOverlay";
 import UploadZone from "@/components/UploadZone";
 import { requestUploadUrl, uploadToS3, preprocessImage, replaceExtension } from "@/lib/s3";
+import { useUndoRedo, type HistoryEntry } from "@/hooks/useUndoRedo";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -141,6 +142,65 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     setContentMutation,
     deleteMutation: deleteShapeMutation,
   } = useShapes(canvasId);
+
+  const { pushHistory, undo, redo } = useUndoRedo();
+
+  // ── Undo/redo-aware commit wrappers ────────────────────────────────────────
+  const wrappedCommitImageMove = useCallback(
+    async (id: Id<"images">, x: number, y: number, prevX: number, prevY: number) => {
+      await commitMove(id, x, y);
+      if (x !== prevX || y !== prevY) {
+        pushHistory({ undo: () => commitMove(id, prevX, prevY), redo: () => commitMove(id, x, y) });
+      }
+    },
+    [commitMove, pushHistory]
+  );
+
+  const wrappedCommitImageResize = useCallback(
+    async (id: Id<"images">, x: number, y: number, w: number, h: number,
+           prevX: number, prevY: number, prevW: number, prevH: number) => {
+      await commitResize(id, x, y, w, h);
+      pushHistory({
+        undo: () => commitResize(id, prevX, prevY, prevW, prevH),
+        redo: () => commitResize(id, x, y, w, h),
+      });
+    },
+    [commitResize, pushHistory]
+  );
+
+  const wrappedCommitShapeMove = useCallback(
+    async (id: Id<"shapes">, x: number, y: number, prevX: number, prevY: number) => {
+      await commitShapeMove(id, x, y);
+      if (x !== prevX || y !== prevY) {
+        pushHistory({ undo: () => commitShapeMove(id, prevX, prevY), redo: () => commitShapeMove(id, x, y) });
+      }
+    },
+    [commitShapeMove, pushHistory]
+  );
+
+  const wrappedCommitShapeResize = useCallback(
+    async (id: Id<"shapes">, x: number, y: number, w: number, h: number,
+           prevX: number, prevY: number, prevW: number, prevH: number) => {
+      await commitShapeResize(id, x, y, w, h);
+      pushHistory({
+        undo: () => commitShapeResize(id, prevX, prevY, prevW, prevH),
+        redo: () => commitShapeResize(id, x, y, w, h),
+      });
+    },
+    [commitShapeResize, pushHistory]
+  );
+
+  const wrappedCommitMoveArrow = useCallback(
+    async (id: Id<"shapes">, x: number, y: number, x2: number, y2: number,
+           prevX: number, prevY: number, prevX2: number, prevY2: number) => {
+      await commitMoveArrow(id, x, y, x2, y2);
+      pushHistory({
+        undo: () => commitMoveArrow(id, prevX, prevY, prevX2, prevY2),
+        redo: () => commitMoveArrow(id, x, y, x2, y2),
+      });
+    },
+    [commitMoveArrow, pushHistory]
+  );
 
   const {
     viewport,
@@ -295,8 +355,40 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   );
 
   const handleGroupDragEnd = useCallback(async () => {
+    const beforePositions = groupOpRef.current?.origPositions;
+    const afterImgs = images.filter((img) => selectedIds.has(img._id))
+      .map((img) => ({ id: img._id as Id<"images">, x: img.x, y: img.y }));
+    const afterShps = shapes.filter((s) => selectedIds.has(s._id))
+      .map((s) => ({ id: s._id as Id<"shapes">, x: s.x, y: s.y, x2: s.x2, y2: s.y2, type: s.type }));
     groupOpRef.current = null;
     await commitGroupMove();
+    if (beforePositions) {
+      pushHistory({
+        undo: async () => {
+          await Promise.all([
+            ...afterImgs.map(({ id }) => {
+              const p = beforePositions.get(id);
+              return p ? commitMove(id, p.x, p.y) : Promise.resolve();
+            }),
+            ...afterShps.map(({ id, type }) => {
+              const p = beforePositions.get(id);
+              if (!p) return Promise.resolve();
+              if (type === "text") return commitShapeMove(id, p.x, p.y);
+              return commitMoveArrow(id, p.x, p.y, (p as { x2: number; y2: number }).x2, (p as { x2: number; y2: number }).y2);
+            }),
+          ]);
+        },
+        redo: async () => {
+          await Promise.all([
+            ...afterImgs.map(({ id, x, y }) => commitMove(id, x, y)),
+            ...afterShps.map(({ id, x, y, x2, y2, type }) => {
+              if (type === "text") return commitShapeMove(id, x, y);
+              return commitMoveArrow(id, x, y, x2!, y2!);
+            }),
+          ]);
+        },
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, shapes, selectedIds]);
 
@@ -330,8 +422,44 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   );
 
   const handleGroupResizeEnd = useCallback(async () => {
+    const beforePositions = groupOpRef.current?.origPositions;
+    const afterImgs = images.filter((img) => selectedIds.has(img._id))
+      .map((img) => ({ id: img._id as Id<"images">, x: img.x, y: img.y, w: img.w, h: img.h }));
+    const afterShps = shapes.filter((s) => selectedIds.has(s._id))
+      .map((s) => ({ id: s._id as Id<"shapes">, x: s.x, y: s.y, w: s.w, h: s.h, x2: s.x2, y2: s.y2, type: s.type }));
     groupOpRef.current = null;
     await commitGroupResize();
+    if (beforePositions) {
+      pushHistory({
+        undo: async () => {
+          await Promise.all([
+            ...afterImgs.map(({ id }) => {
+              const p = beforePositions.get(id);
+              return p ? commitResize(id, p.x, p.y, (p as { w: number }).w, (p as { h: number }).h) : Promise.resolve();
+            }),
+            ...afterShps.map(({ id, type }) => {
+              const p = beforePositions.get(id);
+              if (!p) return Promise.resolve();
+              if (type === "text") {
+                const tp = p as { x: number; y: number; w: number; h: number };
+                return commitShapeResize(id, tp.x, tp.y, tp.w, tp.h);
+              }
+              const ap = p as { x: number; y: number; x2: number; y2: number };
+              return commitMoveArrow(id, ap.x, ap.y, ap.x2, ap.y2);
+            }),
+          ]);
+        },
+        redo: async () => {
+          await Promise.all([
+            ...afterImgs.map(({ id, x, y, w, h }) => commitResize(id, x, y, w, h)),
+            ...afterShps.map(({ id, x, y, w, h, x2, y2, type }) => {
+              if (type === "text") return commitShapeResize(id, x, y, w!, h!);
+              return commitMoveArrow(id, x, y, x2!, y2!);
+            }),
+          ]);
+        },
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images, shapes, selectedIds]);
 
@@ -422,6 +550,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       const h = Math.max(Math.abs(currentY - startY), 70);
       const id = await addShapeMutation({ canvasId, type: "text", x, y, w, h, zIndex: maxZ + 1 });
       setSelectedIds(new Set([id]));
+      const textEntry: HistoryEntry = {
+        undo: () => deleteShapeMutation({ id }),
+        redo: async () => {
+          const newId = await addShapeMutation({ canvasId, type: "text", x, y, w, h, zIndex: maxZ + 1 });
+          textEntry.undo = () => deleteShapeMutation({ id: newId });
+          setSelectedIds(new Set([newId]));
+        },
+      };
+      pushHistory(textEntry);
     } else if (activeTool === "arrow") {
       const dx = currentX - startX, dy = currentY - startY;
       const length = Math.sqrt(dx * dx + dy * dy);
@@ -431,6 +568,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         canvasId, type: "arrow", x: startX, y: startY, x2, y2, zIndex: maxZ + 1,
       });
       setSelectedIds(new Set([id]));
+      const arrowEntry: HistoryEntry = {
+        undo: () => deleteShapeMutation({ id }),
+        redo: async () => {
+          const newId = await addShapeMutation({ canvasId, type: "arrow", x: startX, y: startY, x2, y2, zIndex: maxZ + 1 });
+          arrowEntry.undo = () => deleteShapeMutation({ id: newId });
+          setSelectedIds(new Set([newId]));
+        },
+      };
+      pushHistory(arrowEntry);
     }
   }
 
@@ -438,18 +584,45 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   useEffect(() => {
     if (readOnly) return;
     function handleKeyDown(e: KeyboardEvent) {
-      const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
+      const mod = e.ctrlKey || e.metaKey;
       const notInInput =
         !(e.target instanceof HTMLInputElement) &&
         !(e.target instanceof HTMLTextAreaElement);
 
+      // Undo / Redo
+      if (mod && notInInput) {
+        if (e.key === "z" && !e.shiftKey) { e.preventDefault(); void undo(); return; }
+        if ((e.key === "y") || (e.key === "z" && e.shiftKey)) { e.preventDefault(); void redo(); return; }
+      }
+
+      const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
+
       if (isDeleteKey && notInInput && selectedIds.size > 0) {
+        const shapesBefore = shapes.filter((s) => selectedIds.has(s._id));
         for (const id of selectedIds) {
           const isImg = images.some((img) => img._id === id);
           if (isImg) void deleteMutation({ id: id as Id<"images"> });
           else void deleteShapeMutation({ id: id as Id<"shapes"> });
         }
         setSelectedIds(new Set());
+        // Only shapes can be re-added on undo (image deletes also remove S3 objects)
+        if (shapesBefore.length > 0) {
+          const entry: HistoryEntry = { undo: async () => {}, redo: async () => {} };
+          entry.undo = async () => {
+            const newIds: Array<Id<"shapes">> = [];
+            for (const s of shapesBefore) {
+              const params = s.type === "text"
+                ? { canvasId, type: "text" as const, x: s.x, y: s.y, w: s.w!, h: s.h!, zIndex: s.zIndex, content: s.content }
+                : { canvasId, type: "arrow" as const, x: s.x, y: s.y, x2: s.x2!, y2: s.y2!, zIndex: s.zIndex };
+              const newId = await addShapeMutation(params);
+              newIds.push(newId);
+            }
+            entry.redo = async () => {
+              for (const id of newIds) await deleteShapeMutation({ id });
+            };
+          };
+          pushHistory(entry);
+        }
       }
       if (e.key === "Escape") {
         setSelectedIds(new Set());
@@ -457,7 +630,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         setDrawState(null);
         setBoxSelect(null);
       }
-      if (notInInput) {
+      if (notInInput && !mod) {
         if (e.key === "v" || e.key === "V") setActiveTool("select");
         if (e.key === "b" || e.key === "B") setActiveTool("boxselect");
         if (e.key === "t" || e.key === "T") setActiveTool("text");
@@ -466,7 +639,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedIds, images, deleteMutation, deleteShapeMutation]);
+  }, [selectedIds, images, shapes, deleteMutation, deleteShapeMutation, addShapeMutation, canvasId, undo, redo, pushHistory]);
 
   // ── Upload ─────────────────────────────────────────────────────────────────
   const handleUpload = useCallback(
@@ -475,13 +648,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       width: number; height: number; x: number; y: number; w: number; h: number;
     }) => {
       try {
-        await addMutation({ canvasId, ...params });
+        const id = await addMutation({ canvasId, ...params });
+        // Undo = delete the uploaded image (also removes S3 object). Redo = no-op (can't re-upload).
+        pushHistory({ undo: () => deleteMutation({ id }), redo: async () => {} });
       } catch (err) {
         toast.error(`Failed to add image: ${err instanceof Error ? err.message : "Unknown error"}`);
         throw err;
       }
     },
-    [addMutation, canvasId]
+    [addMutation, canvasId, deleteMutation, pushHistory]
   );
 
   // ── Clipboard paste ────────────────────────────────────────────────────────
@@ -630,14 +805,43 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                 onSelect={(add) => (add ? toggleOne(img._id) : selectOne(img._id))}
                 onDeselect={() => setSelectedIds(new Set())}
                 onMoveOptimistic={setLocalPosition}
-                onCommitMove={commitMove}
-                onCommitResize={commitResize}
+                onCommitMove={wrappedCommitImageMove}
+                onCommitResize={wrappedCommitImageResize}
                 onResizeOptimistic={setLocalSize}
                 onDelete={deleteMutation}
-                onBringToFront={() => void reorderMutation({ id: img._id, zIndex: getMaxZIndex() + 1 })}
-                onSendToBack={() => void reorderMutation({ id: img._id, zIndex: 0 })}
-                onDescriptionChange={(description) => void descriptionMutation({ id: img._id, description })}
-                onDescriptionAlignChange={(align) => void descriptionAlignMutation({ id: img._id, align })}
+                onBringToFront={() => {
+                  const prevZ = img.zIndex;
+                  const newZ = getMaxZIndex() + 1;
+                  void reorderMutation({ id: img._id, zIndex: newZ });
+                  pushHistory({
+                    undo: () => reorderMutation({ id: img._id, zIndex: prevZ }),
+                    redo: () => reorderMutation({ id: img._id, zIndex: newZ }),
+                  });
+                }}
+                onSendToBack={() => {
+                  const prevZ = img.zIndex;
+                  void reorderMutation({ id: img._id, zIndex: 0 });
+                  pushHistory({
+                    undo: () => reorderMutation({ id: img._id, zIndex: prevZ }),
+                    redo: () => reorderMutation({ id: img._id, zIndex: 0 }),
+                  });
+                }}
+                onDescriptionChange={(description) => {
+                  const prev = img.description ?? "";
+                  void descriptionMutation({ id: img._id, description });
+                  pushHistory({
+                    undo: () => descriptionMutation({ id: img._id, description: prev }),
+                    redo: () => descriptionMutation({ id: img._id, description }),
+                  });
+                }}
+                onDescriptionAlignChange={(align) => {
+                  const prev = img.descriptionAlign ?? "left";
+                  void descriptionAlignMutation({ id: img._id, align });
+                  pushHistory({
+                    undo: () => descriptionAlignMutation({ id: img._id, align: prev }),
+                    redo: () => descriptionAlignMutation({ id: img._id, align }),
+                  });
+                }}
               />
             ))}
 
@@ -652,10 +856,17 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                     scale={viewport.scale}
                     onSelect={(add) => (add ? toggleOne(shape._id) : selectOne(shape._id))}
                     onMoveOptimistic={setShapeLocalPosition}
-                    onCommitMove={commitShapeMove}
+                    onCommitMove={wrappedCommitShapeMove}
                     onResizeOptimistic={setShapeLocalSize}
-                    onCommitResize={commitShapeResize}
-                    onContentChange={(id, content) => void setContentMutation({ id, content })}
+                    onCommitResize={wrappedCommitShapeResize}
+                    onContentChange={(id, content) => {
+                      const prev = shapes.find((s) => s._id === id)?.content ?? "";
+                      void setContentMutation({ id, content });
+                      pushHistory({
+                        undo: () => setContentMutation({ id, content: prev }),
+                        redo: () => setContentMutation({ id, content }),
+                      });
+                    }}
                     onDelete={(id) => void deleteShapeMutation({ id })}
                   />
                 );
@@ -670,7 +881,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                     scale={viewport.scale}
                     onSelect={(add) => (add ? toggleOne(shape._id) : selectOne(shape._id))}
                     onMoveOptimistic={setLocalArrow}
-                    onCommitMove={commitMoveArrow}
+                    onCommitMove={wrappedCommitMoveArrow}
                   />
                 );
               }
