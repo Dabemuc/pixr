@@ -52,6 +52,12 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     e.preventDefault();
   }, []);
 
+  // Explicit pan start — call this for left-drag pan (select tool)
+  const startPan = useCallback((clientX: number, clientY: number) => {
+    isPanning.current = true;
+    lastPointer.current = { x: clientX, y: clientY };
+  }, []);
+
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!isPanning.current) return;
     const dx = e.clientX - lastPointer.current.x;
@@ -81,6 +87,7 @@ export function useCanvas(containerRef: React.RefObject<HTMLDivElement | null>) 
     onPointerDown,
     onPointerMove,
     onPointerUp,
+    startPan,
     resetViewport,
     zoomIn,
     zoomOut,

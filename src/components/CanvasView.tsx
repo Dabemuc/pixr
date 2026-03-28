@@ -143,6 +143,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
     onPointerDown: midMouseDown,
     onPointerMove: midMouseMove,
     onPointerUp: midMouseUp,
+    startPan,
     resetViewport,
     zoomIn,
     zoomOut,
@@ -310,14 +311,18 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
       midMouseDown(e);
       return;
     }
+    if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
     if (activeTool === "select") {
-      if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
+      startPan(e.clientX, e.clientY);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
+    if (activeTool === "boxselect") {
       const pos = clientToCanvas(e.clientX, e.clientY);
       setBoxSelect({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
-    if ((e.target as HTMLElement).dataset.canvasBg !== "true") return;
     const pos = clientToCanvas(e.clientX, e.clientY);
     setDrawState({ startX: pos.x, startY: pos.y, currentX: pos.x, currentY: pos.y });
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -325,7 +330,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     midMouseMove(e);
-    if (activeTool === "select") {
+    if (activeTool === "boxselect") {
       if (!boxSelect) return;
       const pos = clientToCanvas(e.clientX, e.clientY);
       setBoxSelect((s) => s ? { ...s, currentX: pos.x, currentY: pos.y } : null);
@@ -338,7 +343,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
 
   async function handlePointerUp() {
     midMouseUp();
-    if (activeTool === "select") {
+    if (activeTool === "boxselect") {
       if (boxSelect) {
         const { startX, startY, currentX, currentY } = boxSelect;
         const bw = currentX - startX, bh = currentY - startY;
@@ -410,6 +415,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
       }
       if (notInInput) {
         if (e.key === "v" || e.key === "V") setActiveTool("select");
+        if (e.key === "b" || e.key === "B") setActiveTool("boxselect");
         if (e.key === "t" || e.key === "T") setActiveTool("text");
         if (e.key === "a" || e.key === "A") setActiveTool("arrow");
       }
@@ -485,7 +491,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar }: C
         <div
           ref={containerRef}
           className="w-full h-full pt-[44px]"
-          style={{ cursor: activeTool === "select" ? "default" : "crosshair" }}
+          style={{ cursor: activeTool === "select" ? "grab" : "crosshair" }}
           data-canvas-bg="true"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}

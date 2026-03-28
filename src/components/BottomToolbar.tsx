@@ -1,9 +1,10 @@
-import { MousePointer2, Type, ArrowRight } from "lucide-react";
+import { Hand, RectangleDashed, Type, ArrowRight } from "lucide-react";
 
-export type Tool = "select" | "text" | "arrow";
+export type Tool = "select" | "boxselect" | "text" | "arrow";
 
 const TOOLS: { id: Tool; icon: React.ComponentType<{ className?: string }>; label: string }[] = [
-  { id: "select", icon: MousePointer2, label: "Select (V)" },
+  { id: "select", icon: Hand, label: "Pan (V)" },
+  { id: "boxselect", icon: RectangleDashed, label: "Box Select (B)" },
   { id: "text", icon: Type, label: "Text (T)" },
   { id: "arrow", icon: ArrowRight, label: "Arrow (A)" },
 ];
