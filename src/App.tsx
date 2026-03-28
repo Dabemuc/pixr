@@ -101,7 +101,8 @@ function AppContent() {
       {/* Mobile backdrop — tap to close sidebar */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 sm:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 bg-black/40 sm:hidden"
+          style={{ top: "calc(44px + env(safe-area-inset-top, 0px))" }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
