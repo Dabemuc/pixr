@@ -92,20 +92,38 @@ docker run -p 80:80 pixr
 
 The image uses nginx to serve the static assets and handles React Router's client-side routing automatically.
 
-### 2b. Deploy the frontend — Static host (Vercel, Netlify, Cloudflare Pages)
+### 2b. Deploy the frontend — Cloudflare Pages
 
-```bash
-npm run build
-```
+The `public/_redirects` file is already included to handle SPA routing.
 
-Set these as build-time environment variables on your host:
+Connect your repo in the [Cloudflare Pages dashboard](https://pages.cloudflare.com) and use these settings:
+
+| Setting | Value |
+|---|---|
+| Build command | `npm run build` |
+| Build output directory | `dist` |
+
+Add these as environment variables under **Settings → Environment Variables**:
 
 | Variable | Value |
 |---|---|
 | `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key |
 | `VITE_CONVEX_URL` | Your Convex deployment URL |
 
-Deploy the `dist/` output directory. Configure your host to serve `index.html` for all routes (SPA fallback).
+Or deploy manually with Wrangler:
+
+```bash
+npm run build
+npx wrangler pages deploy dist --project-name pixr
+```
+
+### 2c. Deploy the frontend — Other static hosts (Vercel, Netlify)
+
+```bash
+npm run build
+```
+
+Set `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_CONVEX_URL` as build-time environment variables. Deploy the `dist/` directory and configure a SPA fallback to serve `index.html` for all routes.
 
 ---
 
