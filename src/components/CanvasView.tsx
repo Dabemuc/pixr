@@ -468,6 +468,22 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedIds, images, deleteMutation, deleteShapeMutation]);
 
+  // ── Upload ─────────────────────────────────────────────────────────────────
+  const handleUpload = useCallback(
+    async (params: {
+      storageKey: string; filename: string; mimeType: string;
+      width: number; height: number; x: number; y: number; w: number; h: number;
+    }) => {
+      try {
+        await addMutation({ canvasId, ...params });
+      } catch (err) {
+        toast.error(`Failed to add image: ${err instanceof Error ? err.message : "Unknown error"}`);
+        throw err;
+      }
+    },
+    [addMutation, canvasId]
+  );
+
   // ── Clipboard paste ────────────────────────────────────────────────────────
   useEffect(() => {
     if (readOnly) return;
@@ -519,22 +535,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, [readOnly, canvasId, handleUpload]);
-
-  // ── Upload ─────────────────────────────────────────────────────────────────
-  const handleUpload = useCallback(
-    async (params: {
-      storageKey: string; filename: string; mimeType: string;
-      width: number; height: number; x: number; y: number; w: number; h: number;
-    }) => {
-      try {
-        await addMutation({ canvasId, ...params });
-      } catch (err) {
-        toast.error(`Failed to add image: ${err instanceof Error ? err.message : "Unknown error"}`);
-        throw err;
-      }
-    },
-    [addMutation, canvasId]
-  );
 
   function handleRenameCanvas(name: string) {
     void renameMutation({ id: canvasId, name }).catch((err: unknown) => {
