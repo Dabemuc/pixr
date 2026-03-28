@@ -109,6 +109,9 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
 
   const groupOpRef = useRef<GroupOpState | null>(null);
   const panStartClientRef = useRef<{ x: number; y: number } | null>(null);
+  const lastCursorCanvasPos = useRef<{ x: number; y: number } | null>(null);
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
@@ -361,6 +364,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
     midMouseMove(e);
+    lastCursorCanvasPos.current = clientToCanvas(e.clientX, e.clientY);
     if (activeTool === "boxselect") {
       if (!boxSelect) return;
       const pos = clientToCanvas(e.clientX, e.clientY);
@@ -462,6 +466,58 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedIds, images, deleteMutation, deleteShapeMutation]);
+
+  // ── Clipboard paste ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (readOnly) return;
+    async function handlePaste(e: ClipboardEvent) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) return;
+      const imageItem = Array.from(e.clipboardData?.items ?? [])
+        .find((item) => item.type.startsWith("image/"));
+      if (!imageItem) return;
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      const MAX_W = 600;
+      const MAX_SIZE = 20 * 1024 * 1024;
+      if (file.size > MAX_SIZE) { toast.error("Pasted image exceeds 20 MB"); return; }
+
+      // Place at last known cursor position, falling back to canvas center
+      const vp = viewportRef.current;
+      const rect = containerRef.current?.getBoundingClientRect();
+      const center = lastCursorCanvasPos.current ?? {
+        x: (((rect?.width ?? 800) / 2) - vp.x) / vp.scale,
+        y: (((rect?.height ?? 600) / 2) - vp.y) / vp.scale,
+      };
+
+      const filename = file.name || "pasted-image.png";
+      const toastId = toast.loading("Uploading pasted image…");
+      try {
+        const [{ uploadUrl, storageKey }, { width, height }] = await Promise.all([
+          requestUploadUrl({ filename, mimeType: file.type, canvasId }),
+          getImageDimensions(file),
+        ]);
+        await uploadToS3(file, uploadUrl, (pct) => {
+          toast.loading(`Uploading… ${Math.round(pct * 100)}%`, { id: toastId });
+        });
+        const w = Math.min(width, MAX_W);
+        const h = Math.round(w * (height / width));
+        await handleUpload({
+          storageKey, filename, mimeType: file.type, width, height,
+          x: center.x - w / 2, y: center.y - h / 2, w, h,
+        });
+        toast.success("Image pasted", { id: toastId });
+      } catch (err) {
+        toast.error(`Paste failed: ${err instanceof Error ? err.message : "Unknown"}`, { id: toastId });
+      }
+    }
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [readOnly, canvasId, handleUpload]);
 
   // ── Upload ─────────────────────────────────────────────────────────────────
   const handleUpload = useCallback(
