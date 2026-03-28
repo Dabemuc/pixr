@@ -668,15 +668,32 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       // Allow paste through file inputs (type="file") — they don't capture clipboard text.
       // On Windows Chromium/Edge, focus can linger on a hidden file input after the picker closes.
       const target = e.target as HTMLElement;
+      const targetInfo = `${target.tagName}${target instanceof HTMLInputElement ? `[type=${target.type}]` : ""}`;
+      console.log("[paste] event fired — target:", targetInfo);
+
       if (
         (target instanceof HTMLInputElement && target.type !== "file") ||
         target instanceof HTMLTextAreaElement
-      ) return;
-      const imageItem = Array.from(e.clipboardData?.items ?? [])
-        .find((item) => item.type.startsWith("image/"));
-      if (!imageItem) return;
+      ) {
+        console.log("[paste] blocked by input guard");
+        return;
+      }
+
+      const items = Array.from(e.clipboardData?.items ?? []);
+      const files = Array.from(e.clipboardData?.files ?? []);
+      console.log("[paste] clipboardData.items:", items.map((i) => `kind=${i.kind} type="${i.type}"`));
+      console.log("[paste] clipboardData.files:", files.map((f) => `name="${f.name}" type="${f.type}" size=${f.size}`));
+
+      const imageItem = items.find((item) => item.type.startsWith("image/"));
+      console.log("[paste] imageItem from items:", imageItem ? `type="${imageItem.type}"` : "none");
+
+      if (!imageItem) {
+        console.log("[paste] no image item found — bailing");
+        return;
+      }
       e.preventDefault();
       const file = imageItem.getAsFile();
+      console.log("[paste] getAsFile():", file ? `name="${file.name}" type="${file.type}" size=${file.size}` : "null");
       if (!file) return;
 
       const MAX_W = 600;
