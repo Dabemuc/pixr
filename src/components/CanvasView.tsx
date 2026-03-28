@@ -470,9 +470,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     // Blur any focused input/textarea when clicking the canvas background so that
     // paste events (Ctrl/Cmd+V) land on document.body and aren't blocked by the guard.
     if ((e.target as HTMLElement).dataset.canvasBg === "true") {
-      const active = document.activeElement as HTMLElement | null;
-      console.log("[pointerdown] blur active element:", active?.tagName, active?.className);
-      active?.blur();
+      (document.activeElement as HTMLElement | null)?.blur();
     }
     if (readOnly) {
       // In read-only mode only allow panning via left-drag on background
@@ -672,16 +670,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   useEffect(() => {
     if (readOnly) return;
     async function handlePaste(e: ClipboardEvent) {
-      const target = e.target as HTMLElement;
-      console.log("[paste] fired — target:", target.tagName, target.className, "| activeElement:", document.activeElement?.tagName, (document.activeElement as HTMLElement)?.className);
-
+      // Guard against pasting while an input/textarea actually has focus.
+      // Check document.activeElement rather than e.target — Arc (and some other
+      // Chromium-based browsers) route paste events to the last-focused element
+      // even after it has lost DOM focus, making e.target unreliable.
+      const active = document.activeElement;
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        console.log("[paste] blocked by input guard");
-        return;
-      }
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement
+      ) return;
 
       const items = Array.from(e.clipboardData?.items ?? []);
       console.log("[paste] items:", items.map((i) => `${i.kind}:${i.type}`));
