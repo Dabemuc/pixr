@@ -982,7 +982,7 @@ export default function Sidebar({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete folder?</AlertDialogTitle>
               <AlertDialogDescription>
-                "{deleteFolderName}" will be deleted. All canvases and nested folders inside will be kept but moved to the root level.
+                "{deleteFolderName}" and all canvases and folders inside it will be permanently deleted. This cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -46,24 +46,26 @@ export const deleteFolder = mutation({
   args: { id: v.id("folders") },
   handler: async (ctx, { id }) => {
     await requireAuth(ctx);
-    // Un-folder all canvases directly inside
-    const canvases = await ctx.db
-      .query("canvases")
-      .withIndex("by_folder", (q) => q.eq("folderId", id))
-      .collect();
-    await Promise.all(
-      canvases.map((canvas) => ctx.db.patch(canvas._id, { folderId: undefined }))
-    );
 
-    // Un-parent all nested folders
-    const nestedFolders = await ctx.db
-      .query("folders")
-      .withIndex("by_parent", (q) => q.eq("parentFolderId", id))
-      .collect();
-    await Promise.all(
-      nestedFolders.map((folder) => ctx.db.patch(folder._id, { parentFolderId: undefined }))
-    );
+    // Recursively delete a folder and all its contents
+    async function deleteFolderRecursive(folderId: typeof id) {
+      // Delete all canvases directly inside
+      const canvases = await ctx.db
+        .query("canvases")
+        .withIndex("by_folder", (q) => q.eq("folderId", folderId))
+        .collect();
+      await Promise.all(canvases.map((canvas) => ctx.db.delete(canvas._id)));
 
-    await ctx.db.delete(id);
+      // Recurse into nested folders, then delete them
+      const nestedFolders = await ctx.db
+        .query("folders")
+        .withIndex("by_parent", (q) => q.eq("parentFolderId", folderId))
+        .collect();
+      await Promise.all(nestedFolders.map((folder) => deleteFolderRecursive(folder._id)));
+
+      await ctx.db.delete(folderId);
+    }
+
+    await deleteFolderRecursive(id);
   },
 });
