@@ -102,26 +102,44 @@ export default function Toolbar({
           </Tooltip>
         )}
 
-        <div className="flex-1 min-w-0">
-          {editing && onRenameCanvas ? (
-            <Input
-              ref={inputRef}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={commit}
-              onKeyDown={handleKeyDown}
-              className="h-8 text-sm font-medium max-w-xs"
-            />
-          ) : (
-            <button
-              className={`text-sm font-medium truncate transition-colors text-left max-w-xs ${
-                onRenameCanvas ? "hover:text-primary cursor-text" : "cursor-default"
-              }`}
-              onClick={() => { if (onRenameCanvas) setEditing(true); }}
-              title={onRenameCanvas ? "Click to rename" : undefined}
-            >
-              {canvasName}
-            </button>
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          <div className="min-w-0">
+            {editing && onRenameCanvas ? (
+              <Input
+                ref={inputRef}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commit}
+                onKeyDown={handleKeyDown}
+                className="h-8 text-sm font-medium max-w-xs"
+              />
+            ) : (
+              <button
+                className={`text-sm font-medium truncate transition-colors text-left max-w-xs ${
+                  onRenameCanvas ? "hover:text-primary cursor-text" : "cursor-default"
+                }`}
+                onClick={() => { if (onRenameCanvas) setEditing(true); }}
+                title={onRenameCanvas ? "Click to rename" : undefined}
+              >
+                {canvasName}
+              </button>
+            )}
+          </div>
+
+          {!readOnly && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-7 w-7 shrink-0 ${isPublic ? "text-primary" : ""}`}
+                  onClick={() => setShareOpen(true)}
+                >
+                  {isPublic ? <Globe className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isPublic ? "Public — click to manage sharing" : "Share"}</TooltipContent>
+            </Tooltip>
           )}
         </div>
 
@@ -164,15 +182,6 @@ export default function Toolbar({
           {!readOnly && (
             <>
               <div className="w-px h-5 bg-border mx-1" />
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShareOpen(true)}>
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Share</TooltipContent>
-              </Tooltip>
 
               <Tooltip>
                 <TooltipTrigger asChild>

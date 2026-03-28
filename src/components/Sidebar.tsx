@@ -56,6 +56,7 @@ import {
   FolderOpen,
   FolderInput,
   FolderMinus,
+  Globe,
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { toast } from "sonner";
@@ -67,6 +68,7 @@ interface CanvasEntry {
   updatedAt: number;
   folderId?: Id<"folders">;
   position?: number;
+  isPublic?: boolean;
 }
 
 interface FolderEntry {
@@ -486,7 +488,12 @@ export default function Sidebar({
             />
           ) : (
             <>
-              <p className="text-sm font-medium truncate leading-tight">{canvas.name}</p>
+              <div className="flex items-center gap-1 min-w-0">
+                <p className="text-sm font-medium truncate leading-tight">{canvas.name}</p>
+                {canvas.isPublic && (
+                  <Globe className={cn("h-3 w-3 shrink-0", isActive ? "text-primary-foreground/70" : "text-muted-foreground")} />
+                )}
+              </div>
               <p className={cn(
                 "text-xs truncate",
                 isActive ? "text-primary-foreground/70" : "text-muted-foreground"
