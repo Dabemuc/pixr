@@ -90,7 +90,7 @@ function AppContent() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-background text-foreground">
+    <div className="flex h-dvh overflow-hidden bg-background text-foreground" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <Sidebar
         canvases={canvases ?? []}
         activeCanvasId={activeCanvasId}
