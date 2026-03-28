@@ -110,8 +110,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   const groupOpRef = useRef<GroupOpState | null>(null);
   const panStartClientRef = useRef<{ x: number; y: number } | null>(null);
   const lastCursorCanvasPos = useRef<{ x: number; y: number } | null>(null);
-  const viewportRef = useRef(viewport);
-  viewportRef.current = viewport;
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
@@ -155,6 +153,9 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     zoomOut,
     fitViewport,
   } = useCanvas(containerRef);
+
+  const viewportRef = useRef(viewport);
+  viewportRef.current = viewport;
 
   const fitToScreen = useCallback(() => {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
