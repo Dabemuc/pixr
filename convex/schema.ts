@@ -53,5 +53,11 @@ export default defineSchema({
     content: v.optional(v.string()),
     zIndex: v.number(),
     updatedAt: v.number(),
+    // text box style
+    textAlign: v.optional(v.union(v.literal("left"), v.literal("center"), v.literal("right"))),
+    isHeadline: v.optional(v.boolean()),
+    showBorder: v.optional(v.boolean()),
+    bgColor: v.optional(v.string()),
+    textColor: v.optional(v.string()),
   }).index("by_canvas", ["canvasId"]),
 });

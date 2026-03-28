@@ -29,6 +29,11 @@ export const add = mutation({
     y2: v.optional(v.number()),
     content: v.optional(v.string()),
     zIndex: v.number(),
+    textAlign: v.optional(v.union(v.literal("left"), v.literal("center"), v.literal("right"))),
+    isHeadline: v.optional(v.boolean()),
+    showBorder: v.optional(v.boolean()),
+    bgColor: v.optional(v.string()),
+    textColor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     await requireAuth(ctx);
@@ -85,6 +90,21 @@ export const remove = mutation({
   handler: async (ctx, { id }) => {
     await requireAuth(ctx);
     await ctx.db.delete(id);
+  },
+});
+
+export const setStyle = mutation({
+  args: {
+    id: v.id("shapes"),
+    textAlign: v.union(v.literal("left"), v.literal("center"), v.literal("right")),
+    isHeadline: v.boolean(),
+    showBorder: v.boolean(),
+    bgColor: v.string(),
+    textColor: v.string(),
+  },
+  handler: async (ctx, { id, textAlign, isHeadline, showBorder, bgColor, textColor }) => {
+    await requireAuth(ctx);
+    await ctx.db.patch(id, { textAlign, isHeadline, showBorder, bgColor, textColor, updatedAt: Date.now() });
   },
 });
 

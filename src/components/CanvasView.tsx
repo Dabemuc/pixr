@@ -8,7 +8,7 @@ import { useShapes } from "@/hooks/useShapes";
 import Toolbar from "@/components/Toolbar";
 import BottomToolbar, { type Tool } from "@/components/BottomToolbar";
 import CanvasImage from "@/components/CanvasImage";
-import TextElement, { type TextShape } from "@/components/TextElement";
+import TextElement, { type TextShape, type TextStyle } from "@/components/TextElement";
 import ArrowElement, { type ArrowShape } from "@/components/ArrowElement";
 import GroupSelectionOverlay, {
   type Bounds,
@@ -139,6 +139,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     commitResize: commitShapeResize,
     commitMoveArrow,
     addMutation: addShapeMutation,
+    setStyleMutation,
     setContentMutation,
     deleteMutation: deleteShapeMutation,
   } = useShapes(canvasId);
@@ -612,7 +613,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
             const newIds: Array<Id<"shapes">> = [];
             for (const s of shapesBefore) {
               const params = s.type === "text"
-                ? { canvasId, type: "text" as const, x: s.x, y: s.y, w: s.w!, h: s.h!, zIndex: s.zIndex, content: s.content }
+                ? { canvasId, type: "text" as const, x: s.x, y: s.y, w: s.w!, h: s.h!, zIndex: s.zIndex, content: s.content,
+                    textAlign: s.textAlign, isHeadline: s.isHeadline, showBorder: s.showBorder, bgColor: s.bgColor, textColor: s.textColor }
                 : { canvasId, type: "arrow" as const, x: s.x, y: s.y, x2: s.x2!, y2: s.y2!, zIndex: s.zIndex };
               const newId = await addShapeMutation(params);
               newIds.push(newId);
@@ -866,6 +868,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
                         undo: () => setContentMutation({ id, content: prev }),
                         redo: () => setContentMutation({ id, content }),
                       });
+                    }}
+                    onStyleChange={(id, style, prevStyle) => {
+                      void setStyleMutation({ id, ...style });
+                      if (prevStyle) {
+                        pushHistory({
+                          undo: () => setStyleMutation({ id, ...prevStyle }),
+                          redo: () => setStyleMutation({ id, ...style }),
+                        });
+                      }
                     }}
                     onDelete={(id) => void deleteShapeMutation({ id })}
                   />

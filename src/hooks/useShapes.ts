@@ -23,6 +23,7 @@ export function useShapes(canvasId: Id<"canvases">) {
   });
 
   const addMutation = useMutation(api.shapes.add);
+  const setStyleMutation = useMutation(api.shapes.setStyle);
   const moveMutation = useMutation(api.shapes.move);
   const resizeMutation = useMutation(api.shapes.resize);
   const moveArrowMutation = useMutation(api.shapes.moveArrow);
@@ -92,6 +93,7 @@ export function useShapes(canvasId: Id<"canvases">) {
     commitResize,
     commitMoveArrow,
     addMutation,
+    setStyleMutation,
     setContentMutation,
     deleteMutation,
     reorderMutation,
