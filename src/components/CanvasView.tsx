@@ -791,8 +791,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           style={{
             touchAction: "none",
             cursor: activeTool === "select" ? "grab" : "crosshair",
-            backgroundImage: viewport.scale < 0.25 ? "none" : "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
-            backgroundSize: `${24 * viewport.scale}px ${24 * viewport.scale}px`,
+            backgroundImage: "radial-gradient(circle, hsl(var(--border)) 1px, transparent 1px)",
+            backgroundSize: (() => { const s = 24 * viewport.scale; const exp = Math.floor(Math.log2(s / 24)); const size = s / Math.pow(2, exp); return `${size}px ${size}px`; })(),
             backgroundPosition: `${viewport.x}px ${viewport.y + TOOLBAR_HEIGHT}px`,
           }}
           data-canvas-bg="true"
