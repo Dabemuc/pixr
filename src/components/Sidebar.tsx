@@ -509,7 +509,7 @@ export default function Sidebar({
         </div>
 
         {!isRenaming && (
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -669,7 +669,7 @@ export default function Sidebar({
           )}
 
           {!isRenaming && (
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
