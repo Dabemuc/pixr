@@ -711,11 +711,8 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         copyToCanvas(entries);
         return;
       }
-      if (mod && notInInput && e.key === "v" && getClipboard().length > 0) {
-        e.preventDefault(); // prevent system paste event
-        void pasteCanvasElements();
-        return;
-      }
+      // Canvas element paste is handled in the paste event listener below,
+      // which checks for OS image data first and falls back to canvas clipboard.
 
       const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
 
@@ -798,7 +795,15 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
 
       const items = Array.from(e.clipboardData?.items ?? []);
       const imageItem = items.find((item) => item.type.startsWith("image/"));
-      if (!imageItem) return;
+
+      // If no OS image but canvas clipboard has elements, paste those instead
+      if (!imageItem) {
+        if (!readOnly && getClipboard().length > 0) {
+          e.preventDefault();
+          void pasteCanvasElements();
+        }
+        return;
+      }
       e.preventDefault();
       const file = imageItem.getAsFile();
       if (!file) return;
@@ -842,7 +847,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     }
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
-  }, [readOnly, canvasId, handleUpload]);
+  }, [readOnly, canvasId, handleUpload, pasteCanvasElements]);
 
   function handleRenameCanvas(name: string) {
     void renameMutation({ id: canvasId, name }).catch((err: unknown) => {
