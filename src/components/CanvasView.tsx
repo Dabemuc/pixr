@@ -119,6 +119,12 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   const groupOpRef = useRef<GroupOpState | null>(null);
   const panStartClientRef = useRef<{ x: number; y: number } | null>(null);
   const lastCursorCanvasPos = useRef<{ x: number; y: number } | null>(null);
+  // Timestamps used to determine which clipboard is newer: canvas vs OS.
+  // windowFocusedAt updates when the window regains focus (suggesting the user
+  // may have copied something in another app). canvasCopiedAt updates when the
+  // user explicitly copies a canvas element via Ctrl+C or the context menu.
+  const canvasCopiedAt = useRef(0);
+  const windowFocusedAt = useRef(Date.now()); // page already focused on mount
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
@@ -598,6 +604,7 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   function copyToCanvas(entries: ClipboardEntry[]) {
     setClipboard(entries);
     setHasClipboard(entries.length > 0);
+    canvasCopiedAt.current = Date.now();
   }
 
   const pasteCanvasElements = useCallback(async () => {
@@ -796,12 +803,23 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
       const items = Array.from(e.clipboardData?.items ?? []);
       const imageItem = items.find((item) => item.type.startsWith("image/"));
 
-      // If no OS image but canvas clipboard has elements, paste those instead
+      // No OS image — paste canvas elements if available
       if (!imageItem) {
         if (!readOnly && getClipboard().length > 0) {
           e.preventDefault();
           void pasteCanvasElements();
         }
+        return;
+      }
+
+      // Both OS image and canvas clipboard have content.
+      // Use whichever was copied more recently:
+      // - canvas element was copied after the window last gained focus → canvas wins
+      // - window gained focus after the last canvas copy → OS image wins (user likely
+      //   went to another app to copy the image after copying the canvas element)
+      if (!readOnly && getClipboard().length > 0 && canvasCopiedAt.current > windowFocusedAt.current) {
+        e.preventDefault();
+        void pasteCanvasElements();
         return;
       }
       e.preventDefault();
@@ -848,6 +866,13 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     window.addEventListener("paste", handlePaste);
     return () => window.removeEventListener("paste", handlePaste);
   }, [readOnly, canvasId, handleUpload, pasteCanvasElements]);
+
+  // Track when the window regains focus so paste can decide which clipboard is newer.
+  useEffect(() => {
+    function onFocus() { windowFocusedAt.current = Date.now(); }
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   function handleRenameCanvas(name: string) {
     void renameMutation({ id: canvasId, name }).catch((err: unknown) => {
