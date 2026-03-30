@@ -29,8 +29,6 @@ docker compose up -d
 
 MinIO API runs on `:9000`, console on `:9001` (login: `minioadmin` / `minioadmin`).
 
-Create a bucket named `canvas-images` in the MinIO console before first use.
-
 ### 3. Configure Clerk
 
 Create a [Clerk](https://clerk.com) application and note your publishable key. Create a `.env.local` file:
