@@ -1,8 +1,8 @@
 # Pixr — Infinite Canvas Image Board
 
-Organize images on infinite, pannable/zoomable canvases. Multiple named canvases, folders, drag-and-drop uploads, real-time sync across all connected clients.
+Organize images on infinite, pannable/zoomable canvases. Multiple named canvases, folders, drag-and-drop uploads, copy/paste, real-time sync across all connected clients.
 
-**Stack:** React + Vite + TypeScript · Convex (backend & realtime) · Clerk (auth) · S3-compatible storage (MinIO locally, AWS S3 / Cloudflare R2 in prod) · Tailwind CSS v4 + shadcn/ui
+**Stack:** React + Vite + TypeScript · Convex (backend & realtime) · Clerk (auth) · Cloudflare R2 (storage) · Cloudflare Pages (hosting) · Tailwind CSS v4 + shadcn/ui
 
 ---
 
@@ -11,7 +11,7 @@ Organize images on infinite, pannable/zoomable canvases. Multiple named canvases
 ### Prerequisites
 
 - Node.js 18+
-- Docker Desktop (for MinIO)
+- Docker Desktop (for MinIO, which emulates R2 locally)
 
 ### 1. Install dependencies
 
@@ -21,21 +21,33 @@ npm install
 
 ### 2. Start MinIO
 
+MinIO provides an S3-compatible API locally that mirrors Cloudflare R2.
+
 ```bash
 docker compose up -d
 ```
 
 MinIO API runs on `:9000`, console on `:9001` (login: `minioadmin` / `minioadmin`).
 
-### 3. Start Convex (local)
+Create a bucket named `canvas-images` in the MinIO console before first use.
+
+### 3. Configure Clerk
+
+Create a [Clerk](https://clerk.com) application and note your publishable key. Create a `.env.local` file:
+
+```bash
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+```
+
+### 4. Start Convex
 
 ```bash
 npx convex dev
 ```
 
-On first run this sets up a local Convex deployment and writes `VITE_CONVEX_URL` to `.env.local`.
+On first run this creates a local Convex project and writes `VITE_CONVEX_URL` to `.env.local` automatically.
 
-Then set the S3 environment variables so Convex can talk to MinIO:
+Set the storage environment variables so Convex can talk to MinIO:
 
 ```bash
 npx convex env set S3_ENDPOINT http://localhost:9000
@@ -48,7 +60,7 @@ npx convex env set S3_FORCE_PATH_STYLE true
 
 Keep `npx convex dev` running — it watches `convex/` and hot-deploys changes.
 
-### 4. Start the frontend
+### 5. Start the frontend
 
 ```bash
 npm run dev
@@ -60,56 +72,58 @@ Open [http://localhost:5173](http://localhost:5173).
 
 ## Production Deployment
 
-### 1. Deploy the Convex backend
+### 1. Cloudflare R2
+
+Create a bucket in the [Cloudflare dashboard](https://dash.cloudflare.com) under **R2 Object Storage**.
+
+Set the CORS policy under **R2 → your bucket → Settings → CORS Policy**:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-app-domain.pages.dev"],
+    "AllowedMethods": ["GET", "PUT"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["ETag"]
+  }
+]
+```
+
+Generate R2 API credentials under **R2 → Manage R2 API Tokens**. Note your **Account ID** from the Cloudflare dashboard home page.
+
+### 2. Convex backend
 
 ```bash
 npx convex deploy
 ```
 
-Then set environment variables in the [Convex dashboard](https://dashboard.convex.dev) under **Settings → Environment Variables**:
+Set environment variables in the [Convex dashboard](https://dashboard.convex.dev) under **Settings → Environment Variables**:
 
 | Variable | Value |
 |---|---|
-| `CLERK_JWT_ISSUER_DOMAIN` | Clerk dashboard → **JWT Templates → Convex → Issuer** field |
-| `S3_ENDPOINT` | See [Storage providers](#storage-providers) below |
-| `S3_BUCKET` | Your bucket name |
-| `S3_ACCESS_KEY_ID` | Your access key |
-| `S3_SECRET_ACCESS_KEY` | Your secret key |
-| `S3_REGION` | See [Storage providers](#storage-providers) below |
-| `S3_FORCE_PATH_STYLE` | See [Storage providers](#storage-providers) below |
+| `CLERK_JWT_ISSUER_DOMAIN` | Clerk dashboard → **JWT Templates → Convex → Issuer** |
+| `S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
+| `S3_BUCKET` | Your R2 bucket name |
+| `S3_ACCESS_KEY_ID` | R2 API token access key |
+| `S3_SECRET_ACCESS_KEY` | R2 API token secret key |
+| `S3_REGION` | `auto` |
+| `S3_FORCE_PATH_STYLE` | `true` |
 
-### 2a. Deploy the frontend — Docker
+### 3. Cloudflare Pages
 
-Build and run the container, passing both Vite build args (baked into the JS bundle at build time):
-
-```bash
-docker build \
-  --build-arg VITE_CLERK_PUBLISHABLE_KEY=pk_live_... \
-  --build-arg VITE_CONVEX_URL=https://your-deployment.convex.cloud \
-  -t pixr .
-
-docker run -p 80:80 pixr
-```
-
-The image uses nginx to serve the static assets and handles React Router's client-side routing automatically.
-
-### 2b. Deploy the frontend — Cloudflare Pages
-
-The `public/_redirects` file is already included to handle SPA routing.
-
-Connect your repo in the [Cloudflare Pages dashboard](https://pages.cloudflare.com) and use these settings:
+Connect your repository in the [Cloudflare Pages dashboard](https://pages.cloudflare.com) and use these build settings:
 
 | Setting | Value |
 |---|---|
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 
-Add these as environment variables under **Settings → Environment Variables**:
+Add environment variables under **Settings → Environment Variables** (Production):
 
 | Variable | Value |
 |---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key |
-| `VITE_CONVEX_URL` | Your Convex deployment URL |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key (`pk_live_...`) |
+| `VITE_CONVEX_URL` | Your Convex deployment URL (`https://....convex.cloud`) |
 
 Or deploy manually with Wrangler:
 
@@ -118,86 +132,24 @@ npm run build
 npx wrangler pages deploy dist --project-name pixr
 ```
 
-### 2c. Deploy the frontend — Other static hosts (Vercel, Netlify)
-
-```bash
-npm run build
-```
-
-Set `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_CONVEX_URL` as build-time environment variables. Deploy the `dist/` directory and configure a SPA fallback to serve `index.html` for all routes.
-
----
-
-## Storage Providers
-
-### AWS S3
-
-| Variable | Value |
-|---|---|
-| `S3_ENDPOINT` | `https://s3.amazonaws.com` |
-| `S3_REGION` | e.g. `us-east-1` |
-| `S3_FORCE_PATH_STYLE` | `false` |
-
-### Cloudflare R2
-
-R2 is fully S3-compatible — no code changes needed. Use these values:
-
-| Variable | Value |
-|---|---|
-| `S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
-| `S3_REGION` | `auto` |
-| `S3_FORCE_PATH_STYLE` | `true` |
-
-Get your **Account ID** from the Cloudflare dashboard home page. Generate **Access Key ID** and **Secret Access Key** under R2 → Manage R2 API Tokens.
-
-**CORS on R2:** Set the CORS policy in the Cloudflare dashboard under R2 → your bucket → Settings → CORS Policy:
-
-```json
-[
-  {
-    "AllowedOrigins": ["https://your-app-domain.com"],
-    "AllowedMethods": ["GET", "PUT"],
-    "AllowedHeaders": ["*"],
-    "ExposeHeaders": ["ETag"]
-  }
-]
-```
-
-### MinIO (local dev)
-
-| Variable | Value |
-|---|---|
-| `S3_ENDPOINT` | `http://localhost:9000` |
-| `S3_REGION` | `us-east-1` (any value works) |
-| `S3_FORCE_PATH_STYLE` | `true` |
-
----
-
-## Bucket CORS (AWS S3)
-
-The browser uploads directly to S3, so your bucket needs a CORS rule allowing your app's origin:
-
-```json
-[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT"],
-    "AllowedOrigins": ["https://your-app-domain.com"],
-    "ExposeHeaders": ["ETag"]
-  }
-]
-```
+> **Note:** The repo includes `.npmrc` with `legacy-peer-deps=true` to resolve a peer dependency conflict between `vite-plugin-pwa` and Vite 8 during the Cloudflare Pages build.
 
 ---
 
 ## Project Structure
 
 ```
-convex/          # Convex backend (schema, queries, mutations, HTTP actions)
+convex/          # Backend: schema, queries, mutations, HTTP actions (upload URLs, image signing)
 src/
-  components/    # React components (CanvasView, Sidebar, Toolbar, etc.)
-  hooks/         # useCanvas (pan/zoom), useImages (optimistic state)
-  lib/           # env.ts (config), s3.ts (upload helpers)
-Dockerfile       # Multi-stage build: node (Vite build) → nginx (static serve)
-nginx.conf       # SPA routing + asset cache headers
+  components/    # React components (CanvasView, Sidebar, Toolbar, CanvasImage, etc.)
+  hooks/         # useCanvas (pan/zoom/viewport), useImages/useShapes (optimistic local state), useUndoRedo
+  lib/           # s3.ts (upload, preprocess, presigned URLs), canvasClipboard.ts (types), env.ts
+public/
+  icons/         # PWA icons
 ```
+
+---
+
+## PWA
+
+The app is installable as a Progressive Web App on iOS and Android. On iOS, use **Share → Add to Home Screen**. The app runs in standalone mode (no browser chrome) and is optimized for touch with mobile-specific viewport handling.
