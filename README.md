@@ -2,6 +2,12 @@
 
 Organize images on infinite, pannable/zoomable canvases. Multiple named canvases, folders, drag-and-drop uploads, copy/paste, real-time sync across all connected clients.
 
+Usecases: Plan Shoots, Share plan with Client, Collect Inspos, Show of your work
+
+<img src="screen_shot.png" alt="Example Screenshot of Web UI" />
+
+> **Note:** Images by North Borders on YouTube ([God Was On My Side For This Photoshoot... (4K POV) ~ North Borders](https://youtu.be/ToOZcZ9meYE?si=O7eS8UhlcpniW0CQ))
+
 **Stack:** React + Vite + TypeScript · Convex (backend & realtime) · Clerk (auth) · Cloudflare R2 (storage) · Cloudflare Pages (hosting) · Tailwind CSS v4 + shadcn/ui
 
 ---
@@ -97,31 +103,31 @@ npx convex deploy
 
 Set environment variables in the [Convex dashboard](https://dashboard.convex.dev) under **Settings → Environment Variables**:
 
-| Variable | Value |
-|---|---|
+| Variable                  | Value                                                 |
+| ------------------------- | ----------------------------------------------------- |
 | `CLERK_JWT_ISSUER_DOMAIN` | Clerk dashboard → **JWT Templates → Convex → Issuer** |
-| `S3_ENDPOINT` | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
-| `S3_BUCKET` | Your R2 bucket name |
-| `S3_ACCESS_KEY_ID` | R2 API token access key |
-| `S3_SECRET_ACCESS_KEY` | R2 API token secret key |
-| `S3_REGION` | `auto` |
-| `S3_FORCE_PATH_STYLE` | `true` |
+| `S3_ENDPOINT`             | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`       |
+| `S3_BUCKET`               | Your R2 bucket name                                   |
+| `S3_ACCESS_KEY_ID`        | R2 API token access key                               |
+| `S3_SECRET_ACCESS_KEY`    | R2 API token secret key                               |
+| `S3_REGION`               | `auto`                                                |
+| `S3_FORCE_PATH_STYLE`     | `true`                                                |
 
 ### 3. Cloudflare Pages
 
 Connect your repository in the [Cloudflare Pages dashboard](https://pages.cloudflare.com) and use these build settings:
 
-| Setting | Value |
-|---|---|
-| Build command | `npm run build` |
-| Build output directory | `dist` |
+| Setting                | Value           |
+| ---------------------- | --------------- |
+| Build command          | `npm run build` |
+| Build output directory | `dist`          |
 
 Add environment variables under **Settings → Environment Variables** (Production):
 
-| Variable | Value |
-|---|---|
-| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key (`pk_live_...`) |
-| `VITE_CONVEX_URL` | Your Convex deployment URL (`https://....convex.cloud`) |
+| Variable                     | Value                                                   |
+| ---------------------------- | ------------------------------------------------------- |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key (`pk_live_...`)              |
+| `VITE_CONVEX_URL`            | Your Convex deployment URL (`https://....convex.cloud`) |
 
 Or deploy manually with Wrangler:
 
