@@ -16,7 +16,7 @@ import GroupSelectionOverlay, {
 } from "@/components/GroupSelectionOverlay";
 import UploadZone from "@/components/UploadZone";
 import { requestUploadUrl, uploadToS3, preprocessImage, replaceExtension } from "@/lib/s3";
-import { setClipboard, getClipboard, type ClipboardEntry } from "@/lib/canvasClipboard";
+import { serializeClipboard, deserializeClipboard, type ClipboardEntry } from "@/lib/canvasClipboard";
 import { useUndoRedo, type HistoryEntry } from "@/hooks/useUndoRedo";
 import { ImagePlus } from "lucide-react";
 import { toast } from "sonner";
@@ -107,7 +107,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [hasClipboard, setHasClipboard] = useState(() => getClipboard().length > 0);
   const [boxSelect, setBoxSelect] = useState<{
     startX: number; startY: number; currentX: number; currentY: number;
   } | null>(null);
@@ -119,12 +118,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
   const groupOpRef = useRef<GroupOpState | null>(null);
   const panStartClientRef = useRef<{ x: number; y: number } | null>(null);
   const lastCursorCanvasPos = useRef<{ x: number; y: number } | null>(null);
-  // Timestamps used to determine which clipboard is newer: canvas vs OS.
-  // windowFocusedAt updates when the window regains focus (suggesting the user
-  // may have copied something in another app). canvasCopiedAt updates when the
-  // user explicitly copies a canvas element via Ctrl+C or the context menu.
-  const canvasCopiedAt = useRef(0);
-  const windowFocusedAt = useRef(Date.now()); // page already focused on mount
 
   // ── Data ───────────────────────────────────────────────────────────────────
   const canvas = useQuery(api.canvases.get, { id: canvasId });
@@ -602,13 +595,12 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
 
   // ── Canvas copy / paste ────────────────────────────────────────────────────
   function copyToCanvas(entries: ClipboardEntry[]) {
-    setClipboard(entries);
-    setHasClipboard(entries.length > 0);
-    canvasCopiedAt.current = Date.now();
+    navigator.clipboard.writeText(serializeClipboard(entries)).catch(() => {
+      toast.error("Copy failed: clipboard access denied");
+    });
   }
 
-  const pasteCanvasElements = useCallback(async () => {
-    const clip = getClipboard();
+  const pasteCanvasElements = useCallback(async (clip: ClipboardEntry[]) => {
     if (!clip.length) return;
 
     // Compute bounding box center of copied elements
@@ -718,8 +710,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         copyToCanvas(entries);
         return;
       }
-      // Canvas element paste is handled in the paste event listener below,
-      // which checks for OS image data first and falls back to canvas clipboard.
 
       const isDeleteKey = e.key === "Delete" || e.key === "Backspace";
 
@@ -800,28 +790,22 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
         active instanceof HTMLTextAreaElement
       ) return;
 
+      // If the clipboard contains canvas elements (written by copyToCanvas),
+      // paste those — this naturally wins when a canvas element was copied last,
+      // and loses when the user subsequently copies something else (image, text, etc.)
+      // since that replaces the OS clipboard entirely.
+      const text = e.clipboardData?.getData("text/plain") ?? "";
+      const canvasEntries = deserializeClipboard(text);
+      if (canvasEntries) {
+        if (readOnly) return;
+        e.preventDefault();
+        void pasteCanvasElements(canvasEntries);
+        return;
+      }
+
       const items = Array.from(e.clipboardData?.items ?? []);
       const imageItem = items.find((item) => item.type.startsWith("image/"));
-
-      // No OS image — paste canvas elements if available
-      if (!imageItem) {
-        if (!readOnly && getClipboard().length > 0) {
-          e.preventDefault();
-          void pasteCanvasElements();
-        }
-        return;
-      }
-
-      // Both OS image and canvas clipboard have content.
-      // Use whichever was copied more recently:
-      // - canvas element was copied after the window last gained focus → canvas wins
-      // - window gained focus after the last canvas copy → OS image wins (user likely
-      //   went to another app to copy the image after copying the canvas element)
-      if (!readOnly && getClipboard().length > 0 && canvasCopiedAt.current > windowFocusedAt.current) {
-        e.preventDefault();
-        void pasteCanvasElements();
-        return;
-      }
+      if (!imageItem) return;
       e.preventDefault();
       const file = imageItem.getAsFile();
       if (!file) return;
@@ -867,12 +851,6 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
     return () => window.removeEventListener("paste", handlePaste);
   }, [readOnly, canvasId, handleUpload, pasteCanvasElements]);
 
-  // Track when the window regains focus so paste can decide which clipboard is newer.
-  useEffect(() => {
-    function onFocus() { windowFocusedAt.current = Date.now(); }
-    window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, []);
 
   function handleRenameCanvas(name: string) {
     void renameMutation({ id: canvasId, name }).catch((err: unknown) => {
@@ -1164,9 +1142,14 @@ export default function CanvasView({ canvasId, sidebarOpen, onToggleSidebar, rea
           )}
         </div>
         </ContextMenuTrigger>
-        {!readOnly && hasClipboard && (
+        {!readOnly && (
           <ContextMenuContent>
-            <ContextMenuItem onClick={() => void pasteCanvasElements()}>Paste</ContextMenuItem>
+            <ContextMenuItem onClick={() => {
+              navigator.clipboard.readText().then((text) => {
+                const entries = deserializeClipboard(text);
+                if (entries) void pasteCanvasElements(entries);
+              }).catch(() => {});
+            }}>Paste</ContextMenuItem>
           </ContextMenuContent>
         )}
         </ContextMenu>

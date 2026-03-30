@@ -1,5 +1,3 @@
-// Module-level clipboard so contents survive canvas switches (component remounts)
-
 export type ClipboardImage = {
   kind: "image";
   storageKey: string;
@@ -35,12 +33,17 @@ export type ClipboardShape = {
 
 export type ClipboardEntry = ClipboardImage | ClipboardShape;
 
-let clipboard: ClipboardEntry[] = [];
+export const CLIPBOARD_PREFIX = "pixr-clipboard:";
 
-export function setClipboard(items: ClipboardEntry[]): void {
-  clipboard = [...items];
+export function serializeClipboard(entries: ClipboardEntry[]): string {
+  return CLIPBOARD_PREFIX + JSON.stringify(entries);
 }
 
-export function getClipboard(): ClipboardEntry[] {
-  return clipboard;
+export function deserializeClipboard(text: string): ClipboardEntry[] | null {
+  if (!text.startsWith(CLIPBOARD_PREFIX)) return null;
+  try {
+    return JSON.parse(text.slice(CLIPBOARD_PREFIX.length)) as ClipboardEntry[];
+  } catch {
+    return null;
+  }
 }
