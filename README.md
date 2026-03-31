@@ -157,3 +157,7 @@ public/
 ## PWA
 
 The app is installable as a Progressive Web App on iOS and Android. On iOS, use **Share → Add to Home Screen**. The app runs in standalone mode (no browser chrome) and is optimized for touch with mobile-specific viewport handling.
+
+## Disclaimer
+
+This Project was "vibe-coded" (heavy use of AI)
